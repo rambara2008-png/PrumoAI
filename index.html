@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prumo — Gestão de Tempo & Crescimento Pessoal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Canvas Confetti for Gamification Celebrations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/canvas.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            orange: '#f97316',
+                            amber: '#f59e0b',
+                            emerald: '#10b981',
+                            neutral: '#18181b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        
+        body {
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            touch-action: manipulation;
+        }
+
+        /* Glassmorphism Styles (Warm Neutral Palette) */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(228, 228, 231, 0.8);
+        }
+        .dark .glass-panel {
+            background: rgba(24, 24, 27, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(228, 228, 231, 0.9);
+        }
+        .dark .glass-card {
+            background: rgba(39, 39, 42, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Moving Animated Logo Effect */
+        @keyframes pulseOrbit {
+            0% { transform: scale(1) rotate(0deg); box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+            50% { transform: scale(1.08) rotate(180deg); box-shadow: 0 0 20px rgba(249, 115, 22, 0.8); }
+            100% { transform: scale(1) rotate(360deg); box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+        }
+        .logo-animated {
+            animation: pulseOrbit 6s infinite linear;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-zinc-100 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 h-full flex flex-col antialiased transition-colors duration-300">
+
+    <!-- TOP HEADER -->
+    <header class="glass-panel sticky top-0 z-40 px-4 py-3 flex items-center justify-between shadow-xs">
+        <div class="flex items-center gap-3">
+            <!-- Animated Logo -->
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20 logo-animated">
+                <i class="ph-bold ph-compass text-2xl"></i>
+            </div>
+            <div class="flex items-center gap-2">
+                <div>
+                    <span class="font-black text-xl tracking-tight bg-gradient-to-r from-amber-600 via-orange-600 to-emerald-600 dark:from-amber-400 dark:via-orange-400 dark:to-emerald-400 bg-clip-text text-transparent">Prumo</span>
+                    <span id="user-level-badge" class="ml-2 text-xs font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">Nível 1</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- User Profile Avatar (Agora clicável para Login) -->
+            <div class="hidden sm:flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-zinc-800 cursor-pointer hover:opacity-80 transition-opacity" onclick="openLoginModal()" title="Fazer Login">
+                <img src="https://placehold.co/100x100/f97316/ffffff?text=P" alt="Perfil Prumo" class="w-8 h-8 rounded-full border-2 border-amber-500 shadow-sm object-cover" onerror="this.src='https://placehold.co/100x100/27272a/ffffff?text=U'">
+                <div class="flex flex-col justify-center">
+                    <span class="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 leading-tight">Visitante</span>
+                    <span class="text-[9px] font-black text-amber-500 uppercase leading-tight tracking-wider">Fazer Login</span>
+                </div>
+            </div>
+
+            <!-- XP Progress Bar -->
+            <div class="hidden sm:flex flex-col items-end gap-1 w-32">
+                <div class="flex justify-between w-full text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
+                    <span>XP TOTAL</span>
+                    <span id="header-xp-text">0 / 100</span>
+                </div>
+                <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-2 overflow-hidden">
+                    <div id="header-xp-bar" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Redo Diagnostic Button -->
+            <button onclick="showOnboardingScreen()" title="Refazer Diagnóstico" class="p-2 text-zinc-500 hover:text-amber-600 dark:text-zinc-400 dark:hover:text-amber-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded-xl transition-colors text-xs font-bold flex items-center gap-1.5">
+                <i class="ph-bold ph-sparkle text-base text-amber-500"></i>
+                <span class="hidden md:inline">Diagnóstico</span>
+            </button>
+
+            <!-- Prominent Light / Dark Mode Toggle -->
+            <button id="theme-toggle" onclick="toggleTheme()" class="flex items-center gap-2 p-2 px-3 rounded-xl bg-zinc-200/80 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition-colors font-bold text-xs shadow-xs">
+                <i class="ph-bold ph-sun text-amber-500 text-base hidden dark:block"></i>
+                <i class="ph-bold ph-moon text-zinc-700 text-base dark:hidden"></i>
+                <span id="theme-mode-text" class="hidden sm:inline">Escuro</span>
+            </button>
+
+            <!-- Notifications Toggle -->
+            <div class="relative">
+                <button onclick="toggleNotifications()" class="p-2 text-zinc-500 hover:text-amber-600 dark:text-zinc-400 dark:hover:text-amber-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded-xl transition-colors font-bold flex items-center relative shadow-xs">
+                    <i class="ph-bold ph-bell text-lg"></i>
+                    <span id="notif-badge" class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-100 dark:border-zinc-950 hidden"></span>
+                </button>
+                <!-- Dropdown -->
+                <div id="notif-dropdown" class="hidden absolute right-0 mt-3 w-80 max-w-[90vw] glass-panel border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col max-h-96 animate-fade-in">
+                    <div class="p-3.5 border-b border-zinc-200 dark:border-zinc-800 font-black text-sm flex justify-between items-center text-zinc-800 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800/50">
+                        <div class="flex items-center gap-2"><i class="ph-bold ph-bell-ringing text-amber-500"></i> Notificações</div>
+                        <button onclick="clearNotifications()" class="text-[10px] text-zinc-500 hover:text-amber-500 uppercase tracking-wider font-bold bg-white dark:bg-zinc-900 px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-700">Limpar</button>
+                    </div>
+                    <div id="notif-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-white/50 dark:bg-zinc-900/50">
+                        <div class="p-4 text-center text-xs font-medium text-zinc-500">Nenhuma notificação nova.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Firebase -->
+            <div id="connection-status" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" title="Sincronizando..."></div>
+        </div>
+    </header>
+
+    <!-- FULL SCREEN ONBOARDING VIEW (PÁGINA ÚNICA DE DIAGNÓSTICO INICIAL) -->
+    <div id="onboarding-screen" class="fixed inset-0 z-50 bg-zinc-900/90 dark:bg-zinc-950/95 backdrop-blur-md overflow-y-auto flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col my-auto animate-fade-in">
+            
+            <!-- Onboarding Header -->
+            <div class="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 p-6 text-white border-b border-zinc-800 relative">
+                <div class="flex justify-between items-start">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-orange-500/30">
+                            ✨
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-extrabold tracking-widest text-amber-400 uppercase">Diagnóstico Inicial IA</span>
+                            <h1 class="text-xl md:text-2xl font-black">Bem-vindo ao Prumo</h1>
+                        </div>
+                    </div>
+                    <button onclick="skipOnboardingToApp()" id="skip-onboarding-btn" class="hidden text-xs text-zinc-400 hover:text-white underline">Ir para o App</button>
+                </div>
+                <p class="text-xs text-zinc-300 mt-2 leading-relaxed">
+                    Converse com o Prumo: ele faz uma pergunta por vez e, no final, monta uma rotina ajustada aos seus horários e picos de energia.
+                </p>
+            </div>
+
+            <!-- Diagnóstico em formato de conversa -->
+            <div id="onboarding-chat" class="p-6 space-y-3 overflow-y-auto h-80"></div>
+
+            <div id="onboarding-loading-box" class="hidden mx-6 mb-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-3">
+                <div class="w-5 h-5 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
+                <span id="onboarding-loading-text">Analisando suas respostas e gerando sua rotina personalizada...</span>
+            </div>
+
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+                <div class="flex gap-2">
+                    <input type="text" id="onboarding-input" maxlength="500" autocomplete="off" placeholder="Digite sua resposta..." onkeydown="if(event.key==='Enter'){sendOnboardingAnswer();}" class="flex-1 p-3.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm font-medium outline-none focus:border-amber-500">
+                    <button onclick="sendOnboardingAnswer()" id="onboarding-send" class="bg-amber-500 hover:bg-amber-600 text-white px-4 rounded-xl shadow-md" title="Enviar"><i class="ph-bold ph-paper-plane-tilt text-lg"></i></button>
+                </div>
+                <div class="flex justify-between items-center gap-3">
+                    <span class="text-[11px] text-zinc-400 font-medium leading-snug">Suas respostas são enviadas a um provedor de IA para gerar a rotina. Não escreva dados pessoais sensíveis.</span>
+                    <button onclick="finishOnboarding()" id="btn-generate-routine" class="hidden shrink-0 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-extrabold px-4 py-2.5 rounded-2xl text-xs shadow-lg shadow-orange-500/25 items-center gap-2">
+                        <i class="ph-bold ph-magic-wand"></i> Gerar minha rotina
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP MAIN CONTAINER -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- DESKTOP SIDEBAR NAVIGATION -->
+        <aside class="hidden md:flex flex-col w-64 glass-panel border-r border-zinc-200 dark:border-zinc-800/80 p-4 gap-2 shrink-0">
+            <nav class="space-y-1 flex-1">
+                <button onclick="switchTab('tab-schedule')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm transition-all text-amber-600 dark:text-amber-400 bg-amber-500/10" data-tab="tab-schedule">
+                    <i class="ph-bold ph-calendar-blank text-xl"></i>
+                    <span>Cronograma & Blocos</span>
+                </button>
+                <button onclick="switchTab('tab-habits')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-all" data-tab="tab-habits">
+                    <i class="ph-bold ph-fire text-xl"></i>
+                    <span>Hábitos & Níveis</span>
+                </button>
+                <button onclick="switchTab('tab-focus')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-all" data-tab="tab-focus">
+                    <i class="ph-bold ph-timer text-xl"></i>
+                    <span>Foco & Frequências</span>
+                </button>
+                <button onclick="switchTab('tab-alarm')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-all" data-tab="tab-alarm">
+                    <i class="ph-bold ph-alarm text-xl"></i>
+                    <span>Despertador & Alarmes</span>
+                </button>
+                <button onclick="switchTab('tab-energy')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-all" data-tab="tab-energy">
+                    <i class="ph-bold ph-lightning text-xl"></i>
+                    <span>Energia & Análise</span>
+                </button>
+                <button onclick="switchTab('tab-coach')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-all" data-tab="tab-coach">
+                    <i class="ph-bold ph-robot text-xl"></i>
+                    <span>Coach IA Contínuo</span>
+                </button>
+                <button onclick="switchTab('tab-help')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-all" data-tab="tab-help">
+                    <i class="ph-bold ph-lifebuoy text-xl"></i>
+                    <span>Ajuda Pessoal</span>
+                </button>
+            </nav>
+
+            <!-- Mini Daily Motivational Quote Widget -->
+            <div class="glass-card p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-xs">
+                <div class="flex items-center gap-1.5 font-bold text-amber-600 dark:text-amber-400 mb-1">
+                    <i class="ph-fill ph-quotes"></i> Reflexão do Prumo
+                </div>
+                <p id="sidebar-quote" class="text-zinc-600 dark:text-zinc-300 italic">"Consistência diária é mais poderosa do que picos esporádicos de motivação."</p>
+            </div>
+        </aside>
+
+        <!-- VIEW PANELS (MAIN CONTENT AREA) -->
+        <main class="flex-1 overflow-y-auto relative p-4 md:p-6 lg:p-8 space-y-6 pb-24 md:pb-8">
+
+            <!-- TAB 1: CRONOGRAMA & BLOCOS DE TEMPO -->
+            <section id="tab-schedule" class="tab-content animate-fade-in max-w-5xl mx-auto space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black tracking-tight">Cronograma Diário</h2>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Organize seu dia em blocos focados de tempo.</p>
+                    </div>
+                    <button onclick="openAddTaskModal()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all">
+                        <i class="ph-bold ph-plus"></i> Novo Bloco
+                    </button>
+                </div>
+
+                <!-- Stats Bar -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                        <span class="text-xs font-bold text-zinc-500">Blocos do Dia</span>
+                        <div class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1" id="stat-total-tasks">0</div>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                        <span class="text-xs font-bold text-zinc-500">Concluídos</span>
+                        <div class="text-2xl font-black text-emerald-500 mt-1" id="stat-completed-tasks">0</div>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                        <span class="text-xs font-bold text-zinc-500">Conclusão</span>
+                        <div class="text-2xl font-black text-orange-500 mt-1" id="stat-completion-rate">0%</div>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                        <span class="text-xs font-bold text-zinc-500">XP de Hoje</span>
+                        <div class="text-2xl font-black text-amber-500 mt-1" id="stat-today-xp">+0 XP</div>
+                    </div>
+                </div>
+
+                <!-- Time Blocks -->
+                <div class="space-y-6">
+                    <!-- Manhã -->
+                    <div class="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
+                            <i class="ph-fill ph-sun text-amber-500 text-xl"></i>
+                            <h3 class="font-bold text-zinc-800 dark:text-zinc-200">Manhã — Foco Prioritário</h3>
+                            <span class="text-xs bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-full font-bold ml-auto">Alta Energia</span>
+                        </div>
+                        <div id="tasks-morning" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Tarde -->
+                    <div class="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
+                            <i class="ph-fill ph-sun-dim text-orange-500 text-xl"></i>
+                            <h3 class="font-bold text-zinc-800 dark:text-zinc-200">Tarde — Execução & Reuniões</h3>
+                            <span class="text-xs bg-orange-100 text-orange-900 dark:bg-orange-950/60 dark:text-orange-300 px-2 py-0.5 rounded-full font-bold ml-auto">Energia Média</span>
+                        </div>
+                        <div id="tasks-afternoon" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Noite -->
+                    <div class="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
+                            <i class="ph-fill ph-moon text-emerald-500 text-xl"></i>
+                            <h3 class="font-bold text-zinc-800 dark:text-zinc-200">Noite — Desaceleração & Planejamento</h3>
+                            <span class="text-xs bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold ml-auto">Recuperação</span>
+                        </div>
+                        <div id="tasks-evening" class="space-y-2"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: HABITOS & NIVEIS -->
+            <section id="tab-habits" class="tab-content hidden animate-fade-in max-w-5xl mx-auto space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black tracking-tight">Hábitos & Gamificação</h2>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Construa consistência e suba de nível.</p>
+                    </div>
+                    <button onclick="openAddHabitModal()" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 transition-all">
+                        <i class="ph-bold ph-plus"></i> Novo Hábito
+                    </button>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 mb-6 bg-gradient-to-tr from-amber-500/5 to-emerald-500/5">
+                    <h3 id="gamification-level-title" class="font-black text-lg text-amber-600 dark:text-amber-400 mb-2">Nível 1 — Mestre do Prumo</h3>
+                    <div class="flex justify-between w-full text-xs font-bold text-zinc-500 mb-1">
+                        <span>Progresso para o próximo nível</span>
+                        <span id="gamification-xp-display">0 / 100 XP</span>
+                    </div>
+                    <div class="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
+                        <div id="gamification-xp-bar" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div id="habits-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </section>
+
+            <!-- TAB 3: FOCO & FREQUENCIAS -->
+            <section id="tab-focus" class="tab-content hidden animate-fade-in max-w-5xl mx-auto space-y-6">
+                <div class="text-center">
+                    <h2 class="text-2xl font-black tracking-tight">Modo Foco</h2>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Pomodoro e Frequências Sonoras.</p>
+                </div>
+                
+                <div class="glass-card max-w-md mx-auto p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex flex-col items-center">
+                    <div class="flex gap-2 mb-8 bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded-2xl">
+                        <button onclick="setFocusMode('work')" class="px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-zinc-700 shadow-sm">25:00</button>
+                        <button onclick="setFocusMode('shortBreak')" class="px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/50 dark:hover:bg-zinc-700/50">05:00</button>
+                        <button onclick="setFocusMode('longBreak')" class="px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/50 dark:hover:bg-zinc-700/50">15:00</button>
+                    </div>
+                    
+                    <div class="text-7xl font-black font-mono tracking-tighter text-zinc-800 dark:text-zinc-100 mb-8" id="timer-display">25:00</div>
+                    
+                    <div class="flex gap-4 w-full">
+                        <button onclick="toggleTimer()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+                            <i id="timer-icon" class="ph-bold ph-play text-xl"></i>
+                        </button>
+                        <button onclick="resetTimer()" class="px-6 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-600 dark:text-zinc-300 py-4 rounded-2xl font-bold shadow-md flex items-center justify-center">
+                            <i class="ph-bold ph-arrow-counter-clockwise text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="max-w-2xl mx-auto space-y-4">
+                    <h3 class="font-bold text-sm text-zinc-800 dark:text-zinc-200 flex items-center gap-2"><i class="ph-bold ph-waveform text-amber-500"></i> Frequências Solfeggio</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button id="freq-btn-calm" onclick="toggleFrequency('calm')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
+                            <span class="text-xl">🧘</span>
+                            <span class="font-bold text-xs">432 Hz - Calma</span>
+                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
+                        </button>
+                        <button id="freq-btn-sleep" onclick="toggleFrequency('sleep')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
+                            <span class="text-xl">💤</span>
+                            <span class="font-bold text-xs">174 Hz - Sono</span>
+                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
+                        </button>
+                        <button id="freq-btn-prosperity" onclick="toggleFrequency('prosperity')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
+                            <span class="text-xl">✨</span>
+                            <span class="font-bold text-xs">528 Hz - Prosperidade</span>
+                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: DESPERTADOR & ALARMES -->
+            <section id="tab-alarm" class="tab-content hidden animate-fade-in max-w-5xl mx-auto space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black tracking-tight">Despertador Inteligente</h2>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Acorde no ritmo certo.</p>
+                        <p class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-1">⚠️ Os alarmes só tocam com o Prumo aberto nesta aba do navegador.</p>
+                    </div>
+                    <button onclick="openAddAlarmModal()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all">
+                        <i class="ph-bold ph-plus"></i> Novo Alarme
+                    </button>
+                </div>
+                
+                <div class="glass-card p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-6 mb-6">
+                    <div class="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 text-3xl shrink-0"><i class="ph-fill ph-alarm"></i></div>
+                    <div>
+                        <span class="text-xs font-bold text-zinc-500">Próximo Alarme</span>
+                        <div class="text-3xl font-black font-mono" id="next-alarm-time">--:--</div>
+                        <div class="text-sm font-semibold text-zinc-600 dark:text-zinc-300" id="next-alarm-label">Nenhum alarme configurado</div>
+                    </div>
+                </div>
+                
+                <div id="alarms-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </section>
+
+            <!-- TAB 5: ENERGIA & ANÁLISE -->
+            <section id="tab-energy" class="tab-content hidden animate-fade-in max-w-5xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-2xl font-black tracking-tight">Energia & Análise</h2>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Monitore seus picos de produtividade.</p>
+                </div>
+                <div class="glass-card p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 max-w-md">
+                    <label class="block text-sm font-bold mb-4 text-center">Como está sua energia agora?</label>
+                    <input type="range" id="energy-slider" min="1" max="10" value="5" class="w-full accent-amber-500" oninput="updateEnergySliderLabel(this.value)">
+                    <div class="text-center font-black text-amber-500 text-2xl mt-4 mb-6" id="energy-slider-val">5 / 10</div>
+                    <button onclick="saveEnergyLog()" class="w-full bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold py-3 rounded-xl shadow-md">Registrar Energia (+10 XP)</button>
+                </div>
+                <div class="glass-card p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 max-w-md">
+                    <h3 class="font-bold text-sm mb-4">Histórico de Hoje</h3>
+                    <div id="energy-history-list" class="space-y-2"></div>
+                </div>
+            </section>
+
+            <!-- TAB 6: COACH IA -->
+            <section id="tab-coach" class="tab-content hidden animate-fade-in max-w-5xl mx-auto h-[70vh] flex flex-col space-y-4">
+                <div class="flex items-center gap-4">
+                    <!-- Bonequinho / Mascotinho Prumo -->
+                    <div class="w-14 h-14 text-amber-500 animate-[bounce_3s_infinite] shrink-0">
+                        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                            <!-- Corpo flutuante -->
+                            <rect x="25" y="40" width="50" height="40" rx="15" fill="currentColor" />
+                            <!-- Tela / Rosto -->
+                            <rect x="35" y="50" width="30" height="15" rx="5" fill="#18181b" />
+                            <!-- Olhos (Piscantes) -->
+                            <circle cx="42" cy="57" r="2.5" fill="#f59e0b" class="animate-pulse" />
+                            <circle cx="58" cy="57" r="2.5" fill="#f59e0b" class="animate-pulse" />
+                            <!-- Antena -->
+                            <path d="M50 40 V25" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                            <circle cx="50" cy="20" r="5" fill="#10b981" class="animate-ping" style="animation-duration: 3s;" />
+                            <circle cx="50" cy="20" r="5" fill="#10b981" />
+                            <!-- Sombra base -->
+                            <ellipse cx="50" cy="95" rx="20" ry="3" fill="rgba(0,0,0,0.1)" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black tracking-tight flex items-center gap-2">Coach Prumo</h2>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Seu mascotinho e assistente pessoal de foco.</p>
+                    </div>
+                </div>
+                <div class="flex-1 glass-card border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden flex flex-col relative">
+                    <button onclick="triggerAntiProcrastination()" class="absolute top-4 right-4 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-sm z-10 animate-pulse hover:animate-none flex items-center gap-1">
+                        <i class="ph-bold ph-warning"></i> Socorro, Procrastinei!
+                    </button>
+                    <div id="coach-messages" class="flex-1 p-4 overflow-y-auto space-y-4 pt-12">
+                        <div class="flex gap-3 max-w-[85%]">
+                            <div class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 text-amber-500 flex items-center justify-center shrink-0 font-bold text-xs border-2 border-amber-500/50 p-1">
+                                <svg viewBox="0 0 100 100" class="w-full h-full"><rect x="25" y="40" width="50" height="40" rx="15" fill="currentColor"/><rect x="35" y="50" width="30" height="15" rx="5" fill="#18181b"/><circle cx="42" cy="57" r="2.5" fill="#f59e0b"/><circle cx="58" cy="57" r="2.5" fill="#f59e0b"/><path d="M50 40 V25" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="20" r="5" fill="#10b981"/></svg>
+                            </div>
+                            <div class="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 p-3 rounded-2xl text-xs sm:text-sm leading-relaxed">
+                                Olá! Sou o Prumo, seu mascotinho e Coach. Como posso ajudar com seu foco hoje?
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800 flex gap-2">
+                        <input type="text" id="coach-input" placeholder="Peça uma dica, ex: Como priorizar minhas tarefas..." class="flex-1 bg-white dark:bg-zinc-800 p-3 rounded-xl text-sm border border-zinc-200 dark:border-zinc-700 outline-none focus:border-amber-500 transition-colors" onkeypress="if(event.key === 'Enter') handleCoachSend()">
+                        <button onclick="handleCoachSend()" class="bg-amber-500 hover:bg-amber-600 text-white p-3 w-12 rounded-xl flex items-center justify-center shadow-md transition-colors"><i class="ph-bold ph-paper-plane-right text-lg"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 7: AJUDA PESSOAL -->
+            <section id="tab-help" class="tab-content hidden animate-fade-in max-w-4xl mx-auto space-y-6">
+                <div class="text-center sm:text-left">
+                    <h2 class="text-3xl font-black tracking-tight flex justify-center sm:justify-start items-center gap-3">
+                        <i class="ph-fill ph-lifebuoy text-amber-500"></i> Ajuda Pessoal & Bem-Estar
+                    </h2>
+                    <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-2">Um espaço seguro projetado para sua regulação emocional, desabafo e reconexão consigo mesmo.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Respiração Box Guiada -->
+                    <div class="glass-card rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center space-y-8 shadow-md">
+                        <div class="text-center space-y-1">
+                            <h3 class="font-bold text-lg text-zinc-800 dark:text-zinc-200">Respiração Box (4-4-4-4)</h3>
+                            <p class="text-xs text-zinc-500">Diminui a ansiedade e clareia a mente em instantes.</p>
+                        </div>
+                        
+                        <div class="relative w-48 h-48 flex items-center justify-center">
+                            <div class="absolute inset-0 rounded-full border border-zinc-200 dark:border-zinc-700"></div>
+                            <div id="breathe-circle" class="absolute inset-0 rounded-full bg-amber-500/20 border-4 border-amber-500 flex items-center justify-center transition-all duration-[4000ms] ease-in-out scale-100">
+                                <span id="breathe-text" class="font-black text-amber-600 dark:text-amber-400 text-lg uppercase tracking-widest text-center px-4">Pausado</span>
+                            </div>
+                        </div>
+
+                        <button onclick="toggleBreathingExercise()" id="btn-breathing" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2">
+                            <i class="ph-bold ph-play" id="icon-breathing"></i> <span>Iniciar Exercício</span>
+                        </button>
+                    </div>
+
+                    <!-- Recursos e Desabafo -->
+                    <div class="space-y-6">
+                        <div class="glass-card p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-md">
+                            <h4 class="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-2 text-lg">
+                                <i class="ph-bold ph-journal text-emerald-500"></i> Diário de Descompressão
+                            </h4>
+                            <p class="text-xs text-zinc-500 mt-1 mb-4">Escreva o que está te afligindo. Os dados ficam apenas no seu navegador, nada é enviado.</p>
+                            <textarea id="vent-journal" class="w-full p-4 text-sm font-medium bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-2xl outline-none focus:border-emerald-500 transition-colors resize-none" rows="4" placeholder="Estou me sentindo..."></textarea>
+                            <div class="flex justify-end mt-3">
+                                <button onclick="clearVentJournal()" class="text-xs bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-600 dark:text-zinc-300 px-4 py-2 rounded-xl font-bold transition-all">Limpar Diário</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-6 rounded-3xl flex flex-col sm:flex-row gap-4 items-center justify-between shadow-md">
+                            <div>
+                                <h4 class="font-black text-red-600 dark:text-red-400 flex items-center gap-2">
+                                    <i class="ph-bold ph-phone-call text-xl"></i> Precisa conversar urgente?
+                                </h4>
+                                <p class="text-xs text-red-900/60 dark:text-red-300/60 mt-1 font-medium max-w-xs">
+                                    Centro de Valorização da Vida (CVV). Atendimento 24h totalmente sigiloso e gratuito.
+                                </p>
+                            </div>
+                            <a href="tel:188" class="bg-red-600 hover:bg-red-700 text-white font-black px-6 py-3 rounded-2xl whitespace-nowrap shadow-lg shadow-red-600/20 transition-all flex items-center gap-2">
+                                Ligar 188
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 glass-panel border-t border-zinc-200 dark:border-zinc-800 z-30 px-2 py-2 flex justify-between overflow-x-auto no-scrollbar items-center gap-2">
+        <button onclick="switchTab('tab-schedule')" class="nav-btn flex-shrink-0 min-w-[4rem] flex flex-col items-center gap-1 text-amber-500 p-1" data-tab="tab-schedule">
+            <i class="ph-bold ph-calendar-blank text-xl"></i>
+            <span class="text-[9px] font-bold">Agenda</span>
+        </button>
+        <button onclick="switchTab('tab-habits')" class="nav-btn flex-shrink-0 min-w-[4rem] flex flex-col items-center gap-1 text-zinc-500 p-1" data-tab="tab-habits">
+            <i class="ph-bold ph-fire text-xl"></i>
+            <span class="text-[9px] font-bold">Hábitos</span>
+        </button>
+        <button onclick="switchTab('tab-focus')" class="nav-btn flex-shrink-0 min-w-[4rem] flex flex-col items-center gap-1 text-zinc-500 p-1" data-tab="tab-focus">
+            <i class="ph-bold ph-timer text-xl"></i>
+            <span class="text-[9px] font-bold">Foco</span>
+        </button>
+        <button onclick="switchTab('tab-alarm')" class="nav-btn flex-shrink-0 min-w-[4rem] flex flex-col items-center gap-1 text-zinc-500 p-1" data-tab="tab-alarm">
+            <i class="ph-bold ph-alarm text-xl"></i>
+            <span class="text-[9px] font-bold">Alarmes</span>
+        </button>
+        <button onclick="switchTab('tab-coach')" class="nav-btn flex-shrink-0 min-w-[4rem] flex flex-col items-center gap-1 text-zinc-500 p-1" data-tab="tab-coach">
+            <i class="ph-bold ph-robot text-xl"></i>
+            <span class="text-[9px] font-bold">Coach</span>
+        </button>
+        <button onclick="switchTab('tab-help')" class="nav-btn flex-shrink-0 min-w-[4rem] flex flex-col items-center gap-1 text-zinc-500 p-1" data-tab="tab-help">
+            <i class="ph-bold ph-lifebuoy text-xl"></i>
+            <span class="text-[9px] font-bold">Ajuda</span>
+        </button>
+    </nav>
+
+    <!-- MODAL: ADD TASK -->
+    <div id="modal-task" class="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4 animate-fade-in">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg">Novo Bloco de Tempo</h3>
+                <button onclick="closeModal('modal-task')" class="text-zinc-400 hover:text-zinc-600"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form onsubmit="handleAddTask(event)" class="space-y-3">
+                <input type="text" id="task-title-input" required placeholder="Título da Tarefa / Bloco" class="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm border border-transparent focus:border-amber-500 outline-none">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="time" id="task-time-input" required class="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm outline-none">
+                    <select id="task-period-input" class="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm outline-none">
+                        <option value="morning">Manhã</option>
+                        <option value="afternoon">Tarde</option>
+                        <option value="evening">Noite</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl text-sm shadow-md">Adicionar (+15 XP)</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD HABIT -->
+    <div id="modal-habit" class="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4 animate-fade-in">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="ph-bold ph-fire text-emerald-500"></i> Novo Hábito
+                </h3>
+                <button onclick="closeModal('modal-habit')" class="text-zinc-400 hover:text-zinc-600"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form onsubmit="handleAddHabit(event)" class="space-y-3">
+                <input type="text" id="habit-title-input" required placeholder="Ex: Ler 15 minutos, Beber 2L de água..." class="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm border border-transparent focus:border-amber-500 outline-none">
+                <input type="text" id="habit-icon-input" placeholder="Emoji/Ícone (Ex: 💧, 📖, 🧘)" class="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm border border-transparent focus:border-amber-500 outline-none">
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm shadow-md">Criar Hábito (+25 XP)</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD ALARM -->
+    <div id="modal-alarm" class="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4 animate-fade-in">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="ph-bold ph-alarm text-amber-500"></i> Configurar Alarme
+                </h3>
+                <button onclick="closeModal('modal-alarm')" class="text-zinc-400 hover:text-zinc-600"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form onsubmit="handleAddAlarm(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 mb-1">Horário</label>
+                    <input type="time" id="alarm-time-input" required class="w-full bg-zinc-100 dark:bg-zinc-800 p-3.5 rounded-xl text-xl font-bold font-mono outline-none border border-transparent focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 mb-1">Título / Descrição</label>
+                    <input type="text" id="alarm-label-input" placeholder="Ex: Despertar do Campeão, Bloco de Foco..." required class="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm outline-none border border-transparent focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 mb-1">Repetição de Dias</label>
+                    <div class="grid grid-cols-7 gap-1" id="alarm-days-selector">
+                        <button type="button" onclick="toggleDaySelection(0)" class="day-btn py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 text-center" data-day="0">Dom</button>
+                        <button type="button" onclick="toggleDaySelection(1)" class="day-btn py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 text-center" data-day="1">Seg</button>
+                        <button type="button" onclick="toggleDaySelection(2)" class="day-btn py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 text-center" data-day="2">Ter</button>
+                        <button type="button" onclick="toggleDaySelection(3)" class="day-btn py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 text-center" data-day="3">Qua</button>
+                        <button type="button" onclick="toggleDaySelection(4)" class="day-btn py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 text-center" data-day="4">Qui</button>
+                        <button type="button" onclick="toggleDaySelection(5)" class="day-btn py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 text-center" data-day="5">Sex</button>
+                        <button type="button" onclick="toggleDaySelection(6)" class="day-btn py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 text-center" data-day="6">Sáb</button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl text-sm shadow-md shadow-amber-500/20">Salvar Alarme</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ALARM RINGING FULLSCREEN -->
+    <div id="modal-alarm-ringing" class="fixed inset-0 bg-gradient-to-br from-amber-600 via-orange-600 to-zinc-900 z-50 hidden flex flex-col items-center justify-center p-6 text-white text-center animate-fade-in">
+        <div class="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-5xl mb-6 animate-bounce shadow-2xl">
+            ⏰
+        </div>
+        <span class="text-xs font-extrabold uppercase tracking-widest text-amber-200">Hora do Prumo!</span>
+        <h2 id="ringing-alarm-time" class="text-6xl font-black font-mono my-2 tracking-tight">07:00</h2>
+        <p id="ringing-alarm-label" class="text-lg font-bold text-zinc-100 max-w-sm mb-8">Despertar do Campeão</p>
+
+        <div class="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
+            <button onclick="snoozeCurrentAlarm()" class="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold py-4 rounded-2xl text-sm border border-white/30 transition-all flex items-center justify-center gap-2">
+                <i class="ph-bold ph-clock"></i> Soneca (+5 min)
+            </button>
+            <button onclick="dismissCurrentAlarm()" class="flex-1 bg-white text-zinc-900 hover:bg-zinc-100 font-extrabold py-4 rounded-2xl text-sm shadow-2xl transition-all flex items-center justify-center gap-2">
+                <i class="ph-bold ph-check-circle"></i> Desligar
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: RESCUE -->
+    <div id="modal-rescue" class="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-amber-500/30 space-y-4 animate-fade-in">
+            <h3 class="font-black text-lg text-amber-500 flex items-center gap-2">🚨 Resgate IA Anti-Procrastinação</h3>
+            <div id="rescue-content" class="text-xs sm:text-sm bg-zinc-100 dark:bg-zinc-800/60 p-4 rounded-xl leading-relaxed"></div>
+            <button onclick="closeModal('modal-rescue')" class="w-full bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold py-3 rounded-xl text-sm">Entendido!</button>
+        </div>
+    </div>
+
+    <!-- MODAL: LOGIN / AUTH -->
+    <div id="modal-login" class="fixed inset-0 bg-zinc-900/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-sm shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col items-center text-center animate-fade-in relative">
+            <button onclick="closeModal('modal-login')" class="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"><i class="ph-bold ph-x text-xl"></i></button>
+            
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-500 flex items-center justify-center text-white shadow-lg mb-4">
+                <i class="ph-bold ph-user text-3xl"></i>
+            </div>
+            <h3 class="font-black text-xl mb-2 text-zinc-800 dark:text-zinc-100">Salvar seu Progresso</h3>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-6 leading-relaxed">
+                Faça login para salvar suas tarefas, níveis de XP e histórico nas nuvens. Assim você não perde nada ao mudar de dispositivo.
+            </p>
+
+            <button onclick="handleGoogleLogin()" class="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold py-3 rounded-xl text-sm shadow-sm flex items-center justify-center gap-3 transition-all mb-3">
+                <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                Continuar com o Google
+            </button>
+
+            <div class="w-full flex items-center justify-between gap-2 my-2">
+                <hr class="flex-1 border-zinc-200 dark:border-zinc-700">
+                <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">ou</span>
+                <hr class="flex-1 border-zinc-200 dark:border-zinc-700">
+            </div>
+
+            <form id="email-auth-form" class="w-full space-y-3" onsubmit="event.preventDefault();">
+                <input type="email" id="auth-email" placeholder="Seu e-mail" required class="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm border border-transparent focus:border-amber-500 outline-none transition-colors">
+                <input type="password" id="auth-password" placeholder="Sua senha" required class="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm border border-transparent focus:border-amber-500 outline-none transition-colors">
+                <div class="flex gap-2 pt-1">
+                    <button type="button" onclick="handleEmailLogin()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-all">Entrar</button>
+                    <button type="button" onclick="handleEmailSignUp()" class="flex-1 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-200 font-bold py-2.5 rounded-xl text-sm transition-all">Criar Conta</button>
+                </div>
+            </form>
+
+            <div class="text-[10px] text-zinc-400 mt-4">
+                *O login requer a configuração das chaves do Firebase.
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-5 py-3 rounded-full shadow-2xl z-50 text-xs font-bold transition-all opacity-0 pointer-events-none translate-y-4 flex items-center gap-2 border border-zinc-700">
+        <span id="toast-msg">Mensagem</span>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'prumo-app-v2';
+        
+        // Configuração Firebase do seu projeto Prumo
+        const fallbackConfig = {
+            apiKey: "AIzaSyCepLdqukMcRMEH8uwwIMGD2MDSWJM1ghQ",
+            authDomain: "prumo-82fe8.firebaseapp.com",
+            projectId: "prumo-82fe8",
+            storageBucket: "prumo-82fe8.firebasestorage.app",
+            messagingSenderId: "230724296884",
+            appId: "1:230724296884:web:88bfbeb14e1c882de1f7e1"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let tasks = [];
+        let habits = [];
+        let energyLogs = [];
+        let alarms = [];
+        let userProfile = { xp: 0, level: 1, onboardingDone: false };
+
+        let selectedAlarmDays = [0, 1, 2, 3, 4, 5, 6];
+        let lastTriggeredMinute = null;
+        let activeRingingAlarm = null;
+        let alarmAudioCtx = null;
+        let alarmToneInterval = null;
+
+        let notificationsList = [];
+
+        // Chamada à IA via backend próprio (/api/chat). A chave da Groq fica só no servidor.
+        async function callAI({ system, messages, json = false }) {
+            if (location.protocol === 'file:') throw new Error('arquivo-local');
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ system, messages, json })
+            });
+            if (!res.ok) throw new Error('Erro da IA: ' + res.status);
+            const data = await res.json();
+            if (!data || typeof data.text !== 'string' || !data.text.trim()) throw new Error('Resposta vazia');
+            return data.text;
+        }
+
+        window.toggleNotifications = function() {
+            const dropdown = document.getElementById('notif-dropdown');
+            dropdown.classList.toggle('hidden');
+            if (!dropdown.classList.contains('hidden')) {
+                document.getElementById('notif-badge').classList.add('hidden');
+            }
+        };
+
+        window.addNotification = function(title, desc, type = 'info') {
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            notificationsList.unshift({ title, desc, type, time: timeStr, id: Date.now() });
+            if (notificationsList.length > 20) notificationsList.pop();
+            renderNotifications();
+            const dropdown = document.getElementById('notif-dropdown');
+            if (dropdown.classList.contains('hidden')) {
+                document.getElementById('notif-badge').classList.remove('hidden');
+            }
+        };
+
+        window.clearNotifications = function() {
+            notificationsList = [];
+            renderNotifications();
+        };
+
+        function renderNotifications() {
+            const listEl = document.getElementById('notif-list');
+            if (notificationsList.length === 0) {
+                listEl.innerHTML = '<div class="p-4 text-center text-xs font-medium text-zinc-500">Nenhuma notificação nova.</div>';
+                return;
+            }
+            listEl.innerHTML = notificationsList.map(n => {
+                let iconColor = "text-amber-500";
+                if(n.type === 'success') iconColor = "text-emerald-500";
+                if(n.type === 'alert') iconColor = "text-red-500";
+                return `
+                    <div class="p-3 rounded-xl bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 flex items-start gap-3">
+                        <div class="mt-0.5 ${iconColor} text-sm"><i class="ph-fill ph-info"></i></div>
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex justify-between">
+                                ${escapeHTML(n.title)} <span class="text-[9px] font-normal text-zinc-500">${n.time}</span>
+                            </div>
+                            <div class="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">${escapeHTML(n.desc)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        let activeFreqType = null;
+        let ambientAudioCtx = null;
+        let ambientOscNodes = [];
+        let ambientGainNode = null;
+        let ambientMasterVolume = 0.5;
+
+        window.setAmbientVolume = function(val) {
+            ambientMasterVolume = parseFloat(val);
+            if (ambientGainNode && ambientAudioCtx) {
+                ambientGainNode.gain.setTargetAtTime(ambientMasterVolume * 0.18, ambientAudioCtx.currentTime, 0.1);
+            }
+        };
+
+        window.toggleFrequency = function(type) {
+            if (activeFreqType === type) {
+                stopAmbientFrequency();
+                return;
+            }
+            stopAmbientFrequency(); // Garante que tudo parou suavemente antes de iniciar
+            
+            // Pequeno delay para permitir o fade out do anterior
+            setTimeout(() => {
+                activeFreqType = type;
+                if (!ambientAudioCtx) {
+                    ambientAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (ambientAudioCtx.state === 'suspended') ambientAudioCtx.resume();
+
+                let baseFreq = 432;
+                let offsetFreq = 4; // Batimento Binaural Theta/Delta
+                if (type === 'sleep') { baseFreq = 174; offsetFreq = 2.5; } 
+                else if (type === 'prosperity') { baseFreq = 528; offsetFreq = 6; }
+
+                ambientGainNode = ambientAudioCtx.createGain();
+                ambientGainNode.gain.value = 0; // Começa mudo
+                // Fade-in super suave de 2 segundos para evitar estalos
+                ambientGainNode.gain.linearRampToValueAtTime(ambientMasterVolume * 0.15, ambientAudioCtx.currentTime + 2.0);
+
+                // Criando 3 Osciladores para um som rico e envolvente (não apenas um apito agudo)
+                const createOsc = (freq, typeStr = 'sine', pan = 0) => {
+                    const osc = ambientAudioCtx.createOscillator();
+                    const panner = ambientAudioCtx.createStereoPanner ? ambientAudioCtx.createStereoPanner() : ambientAudioCtx.createGain();
+                    
+                    osc.type = typeStr;
+                    osc.frequency.setValueAtTime(freq, ambientAudioCtx.currentTime);
+                    
+                    if(panner.pan) panner.pan.value = pan;
+
+                    osc.connect(panner);
+                    panner.connect(ambientGainNode);
+                    osc.start();
+                    ambientOscNodes.push(osc);
+                };
+
+                createOsc(baseFreq, 'sine', 0); // Tom Central
+                createOsc(baseFreq + offsetFreq, 'sine', 1); // Ouvido Direito
+                createOsc(baseFreq - offsetFreq, 'sine', -1); // Ouvido Esquerdo
+                createOsc(baseFreq / 2, 'triangle', 0); // Sub-grave (Metade da frequência) para textura quente
+
+                ambientGainNode.connect(ambientAudioCtx.destination);
+                
+                updateFrequencyButtonsUI(type);
+                showToast(`Sintonizado em frequências terapêuticas de ${baseFreq} Hz`);
+            }, 300);
+        };
+
+        function stopAmbientFrequency() {
+            if (ambientGainNode && ambientAudioCtx && ambientGainNode.gain.value > 0.01) {
+                // Fade-out suave de 1 segundo
+                ambientGainNode.gain.cancelScheduledValues(ambientAudioCtx.currentTime);
+                ambientGainNode.gain.setValueAtTime(ambientGainNode.gain.value, ambientAudioCtx.currentTime);
+                ambientGainNode.gain.linearRampToValueAtTime(0.0001, ambientAudioCtx.currentTime + 1.0);
+                
+                const nodesToStop = [...ambientOscNodes];
+                ambientOscNodes = [];
+                
+                setTimeout(() => {
+                    nodesToStop.forEach(osc => {
+                        try { osc.stop(); osc.disconnect(); } catch(e){}
+                    });
+                }, 1100);
+            }
+            activeFreqType = null;
+            updateFrequencyButtonsUI(null);
+        }
+
+        function updateFrequencyButtonsUI(activeType) {
+            ['calm', 'sleep', 'prosperity'].forEach(type => {
+                const btn = document.getElementById(`freq-btn-${type}`);
+                if (!btn) return;
+                const badge = btn.querySelector('.status-indicator');
+                if (type === activeType) {
+                    btn.className = 'p-4 rounded-2xl border border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 flex flex-col items-center gap-2 transition-all shadow-inner';
+                    if (badge) { badge.className = 'status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-white'; badge.innerText = 'Ativo'; }
+                } else {
+                    btn.className = 'p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all';
+                    if (badge) { badge.className = 'status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'; badge.innerText = 'Off'; }
+                }
+            });
+        }
+
+        let alarmWorker = null;
+        function initBackgroundAlarmWorker() {
+            const workerCode = `
+                let timerInterval = null;
+                self.onmessage = function(e) {
+                    if (e.data === 'start') {
+                        if (timerInterval) clearInterval(timerInterval);
+                        timerInterval = setInterval(() => { self.postMessage('check'); }, 1000);
+                    } else if (e.data === 'stop') {
+                        if (timerInterval) clearInterval(timerInterval);
+                    }
+                };
+            `;
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            alarmWorker = new Worker(URL.createObjectURL(blob));
+            alarmWorker.onmessage = function(e) { if (e.data === 'check') checkAlarms(); };
+            alarmWorker.postMessage('start');
+        }
+
+        window.openAddAlarmModal = function() {
+            selectedAlarmDays = [0,1,2,3,4,5,6];
+            updateDaySelectorUI();
+            const now = new Date();
+            document.getElementById('alarm-time-input').value = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+            document.getElementById('alarm-label-input').value = 'Despertar do Prumo';
+            openModal('modal-alarm');
+        };
+
+        window.toggleDaySelection = function(dayIndex) {
+            const idx = selectedAlarmDays.indexOf(dayIndex);
+            if (idx > -1) {
+                if (selectedAlarmDays.length > 1) selectedAlarmDays.splice(idx, 1);
+            } else {
+                selectedAlarmDays.push(dayIndex);
+            }
+            updateDaySelectorUI();
+        };
+
+        function updateDaySelectorUI() {
+            document.querySelectorAll('#alarm-days-selector .day-btn').forEach(btn => {
+                const day = parseInt(btn.getAttribute('data-day'));
+                if (selectedAlarmDays.includes(day)) {
+                    btn.className = 'day-btn py-2 text-xs font-bold rounded-lg bg-amber-500 text-white border border-amber-500 text-center';
+                } else {
+                    btn.className = 'day-btn py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-center';
+                }
+            });
+        }
+
+        window.handleAddAlarm = async function(e) {
+            e.preventDefault();
+            const time = document.getElementById('alarm-time-input').value;
+            const label = document.getElementById('alarm-label-input').value.trim();
+            if (!time) return;
+
+            const newAlarm = { time, label, days: [...selectedAlarmDays], enabled: true };
+            if (currentUser && currentUser.uid !== 'local-demo-user') {
+                await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/alarms`), newAlarm);
+            } else {
+                alarms.push({ id: 'alarm-' + Date.now(), ...newAlarm });
+                saveLocalAlarms();
+                renderAlarms();
+            }
+            closeModal('modal-alarm');
+            showToast("Alarme ativado!");
+            addXP(10);
+        };
+
+        window.toggleAlarm = async function(id, status) {
+            if (currentUser && currentUser.uid !== 'local-demo-user') {
+                await updateDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/alarms/${id}`), { enabled: !status });
+            } else {
+                const a = alarms.find(x => x.id === id);
+                if (a) { a.enabled = !status; saveLocalAlarms(); renderAlarms(); }
+            }
+        };
+
+        window.deleteAlarm = async function(id) {
+            if (currentUser && currentUser.uid !== 'local-demo-user') {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/alarms/${id}`));
+            } else {
+                alarms = alarms.filter(x => x.id !== id);
+                saveLocalAlarms();
+                renderAlarms();
+            }
+        };
+
+        function saveLocalAlarms() {
+            localStorage.setItem('prumo_alarms', JSON.stringify(alarms));
+        }
+
+        function renderAlarms() {
+            const container = document.getElementById('alarms-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+            if (alarms.length === 0) {
+                container.innerHTML = `<div class="text-center p-8 glass-card rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-400 text-xs font-medium">Nenhum alarme configurado.</div>`;
+                document.getElementById('next-alarm-time').innerText = 'Nenhum';
+                document.getElementById('next-alarm-label').innerText = 'Configure um alarme para manter seu prumo.';
+                return;
+            }
+
+            const enabledAlarms = alarms.filter(a => a.enabled);
+            if (enabledAlarms.length > 0) {
+                document.getElementById('next-alarm-time').innerText = enabledAlarms[0].time;
+                document.getElementById('next-alarm-label').innerText = enabledAlarms[0].label;
+            } else {
+                document.getElementById('next-alarm-time').innerText = 'Desativados';
+                document.getElementById('next-alarm-label').innerText = 'Todos os alarmes estão pausados.';
+            }
+
+            alarms.forEach(a => {
+                const daysText = a.days.length === 7 ? 'Todos os dias' : a.days.map(d => dayNames[d]).join(', ');
+                const card = document.createElement('div');
+                card.className = `glass-card p-4 rounded-2xl border ${a.enabled ? 'border-amber-500/40' : 'border-zinc-200 dark:border-zinc-800 opacity-60'} flex items-center justify-between transition-all`;
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="text-3xl font-black font-mono text-zinc-800 dark:text-zinc-100">${a.time}</div>
+                        <div>
+                            <h4 class="font-bold text-sm text-zinc-800 dark:text-zinc-100">${escapeHTML(a.label)}</h4>
+                            <span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">${daysText}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleAlarm('${a.id}', ${a.enabled})" class="w-12 h-7 rounded-full transition-colors relative ${a.enabled ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-700'}">
+                            <div class="w-5 h-5 rounded-full bg-white shadow-md absolute top-1 transition-transform ${a.enabled ? 'right-1' : 'left-1'}"></div>
+                        </button>
+                        <button onclick="deleteAlarm('${a.id}')" class="text-zinc-400 hover:text-red-500 p-1"><i class="ph-bold ph-trash text-lg"></i></button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function checkAlarms() {
+            const now = new Date();
+            const currentHHMM = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+            const currentDay = now.getDay();
+            const currentKey = `${currentHHMM}-${currentDay}`;
+            if (lastTriggeredMinute === currentKey) return;
+
+            const matchingAlarm = alarms.find(a => a.enabled && a.time === currentHHMM && a.days.includes(currentDay));
+            if (matchingAlarm) {
+                lastTriggeredMinute = currentKey;
+                triggerAlarmRinging(matchingAlarm);
+            }
+        }
+
+        initBackgroundAlarmWorker();
+
+        function triggerAlarmRinging(alarm) {
+            activeRingingAlarm = alarm;
+            document.getElementById('ringing-alarm-time').innerText = alarm.time;
+            document.getElementById('ringing-alarm-label').innerText = alarm.label;
+            openModal('modal-alarm-ringing');
+            startAlarmSound();
+        }
+
+        window.dismissCurrentAlarm = function() {
+            stopAlarmSound();
+            closeModal('modal-alarm-ringing');
+            if(activeRingingAlarm) addNotification("Alarme Desligado", `Atendeu ao alarme "${activeRingingAlarm.label}".`, 'success');
+            activeRingingAlarm = null;
+            showToast("Alarme desligado!");
+            addXP(20);
+        };
+
+        window.snoozeCurrentAlarm = function() {
+            stopAlarmSound();
+            closeModal('modal-alarm-ringing');
+            if(activeRingingAlarm) addNotification("Soneca Ativada", `Alarme "${activeRingingAlarm.label}" adiado por 5min.`, 'info');
+            showToast("Soneca ativada por 5 minutos ⏳");
+            setTimeout(() => { if (activeRingingAlarm) triggerAlarmRinging(activeRingingAlarm); }, 5 * 60 * 1000);
+        };
+
+        function startAlarmSound() {
+            stopAlarmSound();
+            if (!alarmAudioCtx) alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (alarmAudioCtx.state === 'suspended') alarmAudioCtx.resume();
+            const playChimeSequence = () => {
+                if (!alarmAudioCtx) return;
+                const now = alarmAudioCtx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = alarmAudioCtx.createOscillator();
+                    const gain = alarmAudioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.22);
+                    gain.gain.setValueAtTime(0, now + idx * 0.22);
+                    gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.22 + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.22 + 0.6);
+                    osc.connect(gain);
+                    gain.connect(alarmAudioCtx.destination);
+                    osc.start(now + idx * 0.22);
+                    osc.stop(now + idx * 0.22 + 0.65);
+                });
+            };
+            playChimeSequence();
+            alarmToneInterval = setInterval(playChimeSequence, 1800);
+        }
+
+        function stopAlarmSound() {
+            if (alarmToneInterval) { clearInterval(alarmToneInterval); alarmToneInterval = null; }
+        }
+
+        const savedLocalAlarms = localStorage.getItem('prumo_alarms');
+        if (savedLocalAlarms) { try { alarms = JSON.parse(savedLocalAlarms); } catch(e){} }
+
+        function setupFirestoreListeners() {
+            if (!currentUser) return;
+            onSnapshot(collection(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`), (snap) => {
+                tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderTasks();
+            });
+            onSnapshot(collection(db, `artifacts/${appId}/users/${currentUser.uid}/habits`), (snap) => {
+                habits = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderHabits();
+            });
+            onSnapshot(collection(db, `artifacts/${appId}/users/${currentUser.uid}/alarms`), (snap) => {
+                alarms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderAlarms();
+            });
+            onSnapshot(doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/data`), (snap) => {
+                if (snap.exists()) {
+                    userProfile = snap.data();
+                    updateProfileUI();
+                    if (!userProfile.onboardingDone) document.getElementById('skip-onboarding-btn').classList.remove('hidden');
+                } else {
+                    setDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/data`), { xp: 0, level: 1, onboardingDone: false });
+                }
+            });
+            onSnapshot(collection(db, `artifacts/${appId}/users/${currentUser.uid}/logs`), (snap) => {
+                energyLogs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderEnergyLogs();
+            });
+        }
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabId) {
+                    btn.classList.add('text-amber-600', 'dark:text-amber-400', 'bg-amber-500/10');
+                    btn.classList.remove('text-zinc-500', 'text-zinc-600');
+                } else {
+                    btn.classList.remove('text-amber-600', 'dark:text-amber-400', 'bg-amber-500/10');
+                    btn.classList.add('text-zinc-500', 'dark:text-zinc-400');
+                }
+            });
+        };
+
+        window.handleAddTask = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            const title = document.getElementById('task-title-input').value.trim();
+            const time = document.getElementById('task-time-input').value;
+            const period = document.getElementById('task-period-input').value;
+            if (!title) return;
+            await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`), { title, time, period, completed: false, createdAt: Date.now() });
+            closeModal('modal-task');
+            addXP(15);
+        };
+
+        window.toggleTask = async function(id, status) {
+            if (!currentUser) return;
+            await updateDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks/${id}`), { completed: !status });
+            if (!status) addXP(15);
+        };
+
+        window.deleteTask = async function(id) {
+            if (!currentUser) return;
+            await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks/${id}`));
+        };
+
+        function renderTasks() {
+            const morning = document.getElementById('tasks-morning');
+            const afternoon = document.getElementById('tasks-afternoon');
+            const evening = document.getElementById('tasks-evening');
+            if(!morning) return;
+            morning.innerHTML = ''; afternoon.innerHTML = ''; evening.innerHTML = '';
+
+            let total = tasks.length;
+            let completed = tasks.filter(t => t.completed).length;
+            document.getElementById('stat-total-tasks').innerText = total;
+            document.getElementById('stat-completed-tasks').innerText = completed;
+            document.getElementById('stat-completion-rate').innerText = total === 0 ? '0%' : `${Math.round((completed/total)*100)}%`;
+            document.getElementById('stat-today-xp').innerText = `+${completed * 15} XP`;
+
+            tasks.forEach(task => {
+                const item = document.createElement('div');
+                item.className = `flex items-center justify-between p-3 rounded-xl border ${task.completed ? 'bg-zinc-100/50 dark:bg-zinc-900/30 border-zinc-200 dark:border-zinc-800 opacity-60' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 shadow-xs'} transition-all`;
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="toggleTask('${task.id}', ${task.completed})">
+                        <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-400'}">
+                            ${task.completed ? '✓' : ''}
+                        </div>
+                        <span class="text-xs font-black text-amber-500 min-w-[45px]">${task.time || '--:--'}</span>
+                        <span class="text-xs font-semibold ${task.completed ? 'line-through text-zinc-400' : ''}">${escapeHTML(task.title)}</span>
+                    </div>
+                    <button onclick="deleteTask('${task.id}')" class="text-zinc-400 hover:text-red-500 p-1"><i class="ph-bold ph-trash"></i></button>
+                `;
+                if (task.period === 'morning') morning.appendChild(item);
+                else if (task.period === 'evening') evening.appendChild(item);
+                else afternoon.appendChild(item);
+            });
+        }
+
+        window.handleAddHabit = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            const title = document.getElementById('habit-title-input').value.trim();
+            const icon = document.getElementById('habit-icon-input').value.trim() || '⚡';
+            if (!title) return;
+            await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/habits`), { title, icon, streak: 0, completedToday: false });
+            closeModal('modal-habit');
+            addXP(25);
+        };
+
+        window.toggleHabit = async function(id, status, streak) {
+            if (!currentUser) return;
+            const newStreak = !status ? (streak || 0) + 1 : Math.max(0, streak - 1);
+            await updateDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/habits/${id}`), { completedToday: !status, streak: newStreak });
+            if (!status) addXP(25);
+        };
+
+        function renderHabits() {
+            const container = document.getElementById('habits-container');
+            if (!container) return;
+            container.innerHTML = '';
+            habits.forEach(habit => {
+                const card = document.createElement('div');
+                card.className = `glass-card p-4 rounded-2xl border ${habit.completedToday ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-zinc-200 dark:border-zinc-800'} flex items-center justify-between transition-all`;
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="text-2xl p-2.5 rounded-xl bg-zinc-200/60 dark:bg-zinc-800">${habit.icon || '⚡'}</div>
+                        <div>
+                            <h4 class="font-bold text-sm">${escapeHTML(habit.title)}</h4>
+                            <span class="text-[11px] font-bold text-amber-500">🔥 ${habit.streak || 0} dias seguidos</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleHabit('${habit.id}', ${habit.completedToday}, ${habit.streak || 0})" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${habit.completedToday ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-800 hover:bg-amber-500 hover:text-white'}">
+                        ${habit.completedToday ? 'Concluído ✓' : 'Marcar'}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function addXP(amount) {
+            if (!currentUser) return;
+            userProfile.xp = (userProfile.xp || 0) + amount;
+            const newLevel = Math.floor(userProfile.xp / 100) + 1;
+            if (newLevel > userProfile.level) {
+                userProfile.level = newLevel;
+                confetti({ particleCount: 100, spread: 70 });
+                showToast(`🎉 Nível ${newLevel} Alcançado!`);
+                addNotification("Novo Nível Alcançado!", `Subiu para o Nível ${newLevel}. Continue no Prumo!`, 'success');
+            } else {
+                showToast(`+${amount} XP Adquirido!`);
+            }
+            if (currentUser.uid !== 'local-demo-user') {
+                await setDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/data`), userProfile, { merge: true });
+            }
+            updateProfileUI();
+        }
+
+        function updateProfileUI() {
+            const xp = userProfile.xp || 0;
+            const level = userProfile.level || 1;
+            const currentXP = xp % 100;
+            if (document.getElementById('user-level-badge')) document.getElementById('user-level-badge').innerText = `Nível ${level}`;
+            if (document.getElementById('header-xp-text')) document.getElementById('header-xp-text').innerText = `${currentXP} / 100`;
+            if (document.getElementById('header-xp-bar')) document.getElementById('header-xp-bar').style.width = `${currentXP}%`;
+            if (document.getElementById('gamification-xp-display')) document.getElementById('gamification-xp-display').innerText = `${currentXP} / 100 XP`;
+            if (document.getElementById('gamification-xp-bar')) document.getElementById('gamification-xp-bar').style.width = `${currentXP}%`;
+            if (document.getElementById('gamification-level-title')) document.getElementById('gamification-level-title').innerText = `Nível ${level} — Mestre do Prumo`;
+        }
+
+        let timerInterval = null;
+        let timerSeconds = 25 * 60;
+        let isTimerRunning = false;
+
+        window.setFocusMode = function(mode) {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            document.getElementById('timer-icon').className = 'ph-bold ph-play';
+            if (mode === 'work') timerSeconds = 25 * 60;
+            else if (mode === 'shortBreak') timerSeconds = 5 * 60;
+            else if (mode === 'longBreak') timerSeconds = 15 * 60;
+            updateTimerDisplay();
+        };
+
+        window.toggleTimer = function() {
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                document.getElementById('timer-icon').className = 'ph-bold ph-play';
+            } else {
+                isTimerRunning = true;
+                document.getElementById('timer-icon').className = 'ph-bold ph-pause';
+                timerInterval = setInterval(() => {
+                    if (timerSeconds > 0) {
+                        timerSeconds--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        addXP(30);
+                        showToast("🔔 Sessão de Foco Concluída!");
+                        document.getElementById('timer-icon').className = 'ph-bold ph-play';
+                    }
+                }, 1000);
+            }
+        };
+
+        window.resetTimer = function() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            document.getElementById('timer-icon').className = 'ph-bold ph-play';
+            timerSeconds = 25 * 60;
+            updateTimerDisplay();
+        };
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+            const secs = (timerSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+        }
+
+        window.updateEnergySliderLabel = function(val) {
+            document.getElementById('energy-slider-val').innerText = `${val} / 10`;
+        };
+
+        window.saveEnergyLog = async function() {
+            if (!currentUser) return;
+            const energy = document.getElementById('energy-slider').value;
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (currentUser.uid !== 'local-demo-user') {
+                await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/logs`), { energy, time, timestamp: Date.now() });
+            } else {
+                energyLogs.push({ energy, time, timestamp: Date.now() });
+                renderEnergyLogs();
+            }
+            showToast("Nível de energia registrado!");
+            addXP(10);
+        };
+
+        function renderEnergyLogs() {
+            const container = document.getElementById('energy-history-list');
+            if (!container) return;
+            container.innerHTML = '';
+            energyLogs.sort((a,b) => b.timestamp - a.timestamp).forEach(log => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center p-3 rounded-xl bg-zinc-100/80 dark:bg-zinc-800/80 text-xs font-semibold';
+                item.innerHTML = `<span>Energia: ${log.energy}/10</span> <span class="text-zinc-500">${log.time}</span>`;
+                container.appendChild(item);
+            });
+        }
+
+        const COACH_SYSTEM = `Você é o Coach IA do aplicativo "Prumo", especializado em gestão de tempo, foco e combate à procrastinação. Responda em português, de forma direta, acolhedora e curta, sem formatação markdown. O público inclui adolescentes a partir de 12 anos: use linguagem simples e segura. Nunca peça nem incentive o compartilhamento de dados pessoais (nome completo, endereço, escola, telefone). Se o usuário falar de autolesão, suicídio, abuso, violência ou sofrimento intenso, responda com empatia, diga que ele não está sozinho, incentive conversar agora com um adulto de confiança ou profissional e, no Brasil, ligar para o CVV no 188 (24h, gratuito) ou para o SAMU no 192 em emergência. Não faça diagnósticos nem dê conselhos médicos. Mantenha-se no tema de rotina, foco e hábitos e recuse com educação pedidos fora disso.`;
+        let coachHistory = [];
+
+        window.handleCoachSend = async function() {
+            const input = document.getElementById('coach-input');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            appendCoachMsg('user', text);
+            const loadingId = appendCoachMsg('bot', 'Pensando...');
+
+            coachHistory.push({ role: 'user', content: text });
+            try {
+                const reply = await callAI({
+                    system: COACH_SYSTEM + ` O usuário está no Nível ${userProfile.level}.`,
+                    messages: coachHistory.slice(-10)
+                });
+                const loadEl = document.getElementById(loadingId);
+                if (loadEl) loadEl.remove();
+                const clean = cleanMarkdown(reply);
+                coachHistory.push({ role: 'assistant', content: clean });
+                appendCoachMsg('bot', clean);
+            } catch (err) {
+                const loadEl = document.getElementById(loadingId);
+                if (loadEl) loadEl.remove();
+
+                const lower = text.toLowerCase();
+                let fallback = "Para manter o foco, o ideal é quebrar essa tarefa em partes menores. O que acha de fazer apenas 5 minutos agora?";
+                
+                if (lower.includes("bom dia")) fallback = "Bom dia! ☀️ Pronto para focar no que importa hoje? Qual a sua primeira missão?";
+                else if (lower.includes("boa tarde")) fallback = "Boa tarde! ☕ Como está a energia? Lembre-se de fazer pequenas pausas e beber água.";
+                else if (lower.includes("boa noite")) fallback = "Boa noite! 🌙 Hora de desacelerar o ritmo. Já registrou como foi seu dia no nosso Diário de Descompressão?";
+                else if (lower.includes("oi") || lower.includes("ola") || lower.includes("olá")) fallback = "Olá! Aqui é o Prumo, seu mascotinho de bolso! Como posso te ajudar a vencer a procrastinação agora?";
+                else if (lower.includes("socorro") || lower.includes("ajuda")) fallback = "Estou aqui! Respire fundo. Escolha a menor e mais fácil tarefa possível e coloque o timer de apenas 5 minutos. Você consegue!";
+
+                coachHistory.push({ role: 'assistant', content: fallback });
+                appendCoachMsg('bot', fallback);
+            }
+        };
+
+        function appendCoachMsg(role, text) {
+            const container = document.getElementById('coach-messages');
+            if (!container) return 'fallback-id';
+            
+            // Adicionando um randomizador robusto para evitar colisão de IDs na mesma milissegundo!
+            const id = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 100000);
+            
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = `flex gap-3 max-w-[85%] ${role === 'user' ? 'ml-auto flex-row-reverse' : ''} animate-fade-in`;
+            
+            let avatar = '';
+            if (role === 'user') {
+                avatar = `<div class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 font-bold text-xs shadow-md">Você</div>`;
+            } else {
+                avatar = `<div class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 text-amber-500 flex items-center justify-center shrink-0 font-bold text-xs border-2 border-amber-500/50 p-1 shadow-md">
+                    <svg viewBox="0 0 100 100" class="w-full h-full"><rect x="25" y="40" width="50" height="40" rx="15" fill="currentColor"/><rect x="35" y="50" width="30" height="15" rx="5" fill="#18181b"/><circle cx="42" cy="57" r="2.5" fill="#f59e0b"/><circle cx="58" cy="57" r="2.5" fill="#f59e0b"/><path d="M50 40 V25" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="20" r="5" fill="#10b981"/></svg>
+                </div>`;
+            }
+
+            div.innerHTML = `
+                ${avatar}
+                <div class="${role === 'user' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm'} p-3 rounded-2xl text-xs sm:text-sm leading-relaxed">${escapeHTML(text)}</div>
+            `;
+            container.appendChild(div);
+            
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 10);
+            
+            return id;
+        }
+
+        window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); };
+        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
+        window.openAddTaskModal = function() { openModal('modal-task'); };
+        window.openAddHabitModal = function() { openModal('modal-habit'); };
+        window.openLoginModal = function() { openModal('modal-login'); };
+
+        function updateUIAfterLogin(user) {
+            const profileName = document.querySelector('.hidden.sm\\:flex.items-center.gap-2.pl-2 span.text-zinc-500');
+            const profileImg = document.querySelector('.hidden.sm\\:flex.items-center.gap-2.pl-2 img');
+            if (profileName) profileName.innerText = user.displayName || user.email.split('@')[0] || "Usuário";
+            if (profileImg && user.photoURL) profileImg.src = user.photoURL;
+        }
+
+        window.handleGoogleLogin = async function() {
+            const btn = document.querySelector('#modal-login button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="w-5 h-5 rounded-full border-2 border-zinc-800 dark:border-zinc-200 border-t-transparent animate-spin"></div> Conectando...';
+            
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                btn.innerHTML = originalText;
+                closeModal('modal-login');
+                showToast("Bem-vindo(a), " + (result.user.displayName || "Mestre do Prumo") + "!");
+                updateUIAfterLogin(result.user);
+            } catch (err) {
+                console.error("Erro no login:", err);
+                if (firebaseConfig.apiKey === "dummy") {
+                    showToast("Erro: Substitua as chaves 'dummy' no código pelas suas chaves do Firebase!");
+                } else {
+                    showToast("Erro ao fazer login. Verifique se o login com Google está ativado no Firebase Console.");
+                }
+                btn.innerHTML = originalText;
+            }
+        };
+
+        window.handleEmailSignUp = async function() {
+            const email = document.getElementById('auth-email').value.trim();
+            const pass = document.getElementById('auth-password').value.trim();
+            if (!email || !pass) return showToast("Por favor, preencha o e-mail e a senha para criar a conta.");
+            if (pass.length < 6) return showToast("A senha deve ter pelo menos 6 caracteres.");
+            
+            try {
+                const result = await createUserWithEmailAndPassword(auth, email, pass);
+                closeModal('modal-login');
+                showToast("Conta criada com sucesso! 🚀");
+                updateUIAfterLogin(result.user);
+            } catch (err) {
+                console.error(err);
+                if (firebaseConfig.apiKey === "dummy") {
+                    showToast("Erro: Chaves do Firebase não configuradas.");
+                } else {
+                    showToast("Erro ao criar conta: " + (err.message.includes('email-already') ? "Este e-mail já está em uso." : err.message));
+                }
+            }
+        };
+
+        let breathingInterval = null;
+        let isBreathingActive = false;
+        window.toggleBreathingExercise = function() {
+            const circle = document.getElementById('breathe-circle');
+            const textEl = document.getElementById('breathe-text');
+            const btnText = document.querySelector('#btn-breathing span');
+            const btnIcon = document.getElementById('icon-breathing');
+
+            if (isBreathingActive) {
+                clearInterval(breathingInterval);
+                isBreathingActive = false;
+                circle.className = 'absolute inset-0 rounded-full bg-amber-500/20 border-4 border-amber-500 flex items-center justify-center transition-all duration-700 ease-in-out scale-100';
+                textEl.innerText = 'Pausado';
+                btnText.innerText = 'Iniciar Exercício';
+                btnIcon.className = 'ph-bold ph-play';
+                return;
+            }
+            isBreathingActive = true;
+            btnText.innerText = 'Parar Exercício';
+            btnIcon.className = 'ph-bold ph-stop';
+            
+            const phases = [
+                { t: "Inspire (4s)", s: "scale-150" },
+                { t: "Segure (4s)", s: "scale-150 opacity-60" },
+                { t: "Expire (4s)", s: "scale-100" },
+                { t: "Segure (4s)", s: "scale-100 opacity-60" }
+            ];
+            let step = 0;
+            const executePhase = () => {
+                circle.className = `absolute inset-0 rounded-full bg-amber-500/20 border-4 border-amber-500 flex items-center justify-center transition-all duration-[4000ms] ease-in-out ${phases[step].s}`;
+                textEl.innerText = phases[step].t;
+                step = (step + 1) % 4;
+            };
+            executePhase();
+            breathingInterval = setInterval(executePhase, 4000);
+        };
+
+        window.clearVentJournal = function() {
+            document.getElementById('vent-journal').value = '';
+            showToast("Diário limpo.");
+        };
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+            setTimeout(() => { toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4'); }, 3000);
+        }
+
+        function escapeHTML(str) {
+            return (str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        // Nova função para limpar a formatação markdown (asteriscos e hashtags) da IA
+        function cleanMarkdown(str) {
+            return (str || '').replace(/\*\*/g, '').replace(/#+\s?/g, '').trim();
+        }
+
+        window.toggleTheme = function() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeUI(isDark);
+        };
+
+        function updateThemeUI(isDark) {
+            const textEl = document.getElementById('theme-mode-text');
+            if (textEl) textEl.innerText = isDark ? 'Claro' : 'Escuro';
+        }
+
+
+        // ---------- Diagnóstico em conversa ----------
+        const ONBOARD_MAX = 5;
+        const ONBOARD_FIRST = "Oi! Eu sou o Prumo 👋 Vou te fazer algumas perguntas rápidas para montar sua rotina. Para começar: qual é o seu objetivo principal no momento?";
+        const ONBOARD_FALLBACK = [
+            null,
+            "Como é o seu dia a dia hoje? Conte seus horários de acordar, trabalho ou estudo e descanso.",
+            "Qual é o seu maior desafio com o tempo?",
+            "Em que período do dia sua energia é mais alta: manhã, tarde ou noite?",
+            "Quais hábitos você gostaria de cultivar? (pode responder \"nenhum\")"
+        ];
+        let onboardHistory = [];
+        let onboardAnswers = 0;
+        let onboardBusy = false;
+
+        function addOnboardMsg(role, text) {
+            const box = document.getElementById('onboarding-chat');
+            if (!box) return null;
+            const id = 'ob-' + Date.now() + '-' + Math.floor(Math.random() * 100000);
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = 'flex ' + (role === 'user' ? 'justify-end' : 'justify-start') + ' animate-fade-in';
+            const bubble = document.createElement('div');
+            bubble.className = (role === 'user'
+                ? 'bg-amber-500 text-white'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700')
+                + ' max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed';
+            bubble.textContent = text;
+            div.appendChild(bubble);
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+            return id;
+        }
+
+        window.startOnboardingChat = function() {
+            const box = document.getElementById('onboarding-chat');
+            if (!box) return;
+            box.innerHTML = '';
+            onboardHistory = [{ role: 'assistant', content: ONBOARD_FIRST }];
+            onboardAnswers = 0;
+            onboardBusy = false;
+            if (location.protocol === 'file:') {
+                addOnboardMsg('bot', '⚠️ Você abriu o arquivo direto do computador, então a IA não consegue responder. Abra o endereço do site na Vercel (https://...vercel.app) para conversar de verdade. Por enquanto vou usar perguntas padrão.');
+            }
+            addOnboardMsg('bot', ONBOARD_FIRST);
+            const btn = document.getElementById('btn-generate-routine');
+            if (btn) { btn.classList.add('hidden'); btn.classList.remove('flex'); }
+        };
+
+        window.showOnboardingScreen = function() {
+            window.startOnboardingChat();
+            document.getElementById('onboarding-screen').classList.remove('hidden');
+            const skip = document.getElementById('skip-onboarding-btn');
+            if (skip) skip.classList.remove('hidden');
+        };
+        window.skipOnboardingToApp = function() { document.getElementById('onboarding-screen').classList.add('hidden'); };
+
+        window.sendOnboardingAnswer = async function() {
+            if (onboardBusy) return;
+            const input = document.getElementById('onboarding-input');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            addOnboardMsg('user', text);
+            onboardHistory.push({ role: 'user', content: text });
+            onboardAnswers++;
+
+            if (onboardAnswers >= 3) {
+                const btn = document.getElementById('btn-generate-routine');
+                if (btn) { btn.classList.remove('hidden'); btn.classList.add('flex'); }
+            }
+            if (onboardAnswers >= ONBOARD_MAX) { await window.finishOnboarding(); return; }
+
+            onboardBusy = true;
+            const typingId = addOnboardMsg('bot', '...');
+            let question;
+            try {
+                const system = `Você é o Prumo, um assistente de gestão de tempo que conduz um diagnóstico inicial por conversa, em português, com tom amigável e natural, sem markdown e sem listas. Em cada resposta: (1) reaja em UMA frase curta ao que o usuário acabou de dizer; (2) faça UMA única pergunta. Se o usuário cumprimentar ou perguntar algo (ex.: "tudo bem?"), responda com simpatia e volte à pergunta atual. Se a resposta for confusa, curta demais (ex.: uma letra) ou não responder à pergunta, peça com gentileza que explique melhor, em vez de avançar. Assuntos a descobrir: objetivo principal, rotina atual, maior desafio com o tempo, período do dia de maior energia e hábitos que quer cultivar. Não monte o plano agora. Nunca peça dados pessoais (nome completo, endereço, escola, telefone). Use linguagem simples, pois o público inclui adolescentes. Já foram enviadas ${onboardAnswers} respostas de ${ONBOARD_MAX}; se a última resposta foi válida, faça a pergunta ${onboardAnswers + 1}.`;
+                question = cleanMarkdown(await callAI({ system, messages: onboardHistory }));
+            } catch (err) {
+                console.warn('IA indisponível no diagnóstico, usando pergunta padrão:', err);
+                if (!window.__aiWarned && location.protocol !== 'file:') {
+                    window.__aiWarned = true;
+                    addOnboardMsg('bot', '⚠️ A IA não respondeu agora (confira a chave na Vercel). Vou seguir com perguntas padrão.');
+                }
+                question = ONBOARD_FALLBACK[onboardAnswers] || ONBOARD_FALLBACK[ONBOARD_FALLBACK.length - 1];
+            }
+            const typingEl = document.getElementById(typingId);
+            if (typingEl) typingEl.remove();
+            addOnboardMsg('bot', question);
+            onboardHistory.push({ role: 'assistant', content: question });
+            onboardBusy = false;
+        };
+
+        function sanitizeRoutine(parsed) {
+            const periods = ['morning', 'afternoon', 'evening'];
+            const timeOk = /^([01]\d|2[0-3]):[0-5]\d$/;
+            const tasks = (Array.isArray(parsed && parsed.tasks) ? parsed.tasks : []).slice(0, 6).map(t => ({
+                title: String(t.title || '').slice(0, 80).trim(),
+                time: timeOk.test(t.time) ? t.time : '09:00',
+                period: periods.includes(t.period) ? t.period : 'morning'
+            })).filter(t => t.title);
+            const habits = (Array.isArray(parsed && parsed.habits) ? parsed.habits : []).slice(0, 4).map(h => ({
+                title: String(h.title || '').slice(0, 60).trim(),
+                icon: String(h.icon || '✅').slice(0, 4)
+            })).filter(h => h.title);
+            return { tasks, habits };
+        }
+
+        window.finishOnboarding = async function() {
+            if (onboardBusy) return;
+            onboardBusy = true;
+            const loadingBox = document.getElementById('onboarding-loading-box');
+            const generateBtn = document.getElementById('btn-generate-routine');
+            if (loadingBox) loadingBox.classList.remove('hidden');
+            if (generateBtn) generateBtn.disabled = true;
+
+            try {
+                const transcript = onboardHistory.map(m => (m.role === 'user' ? 'Usuário: ' : 'Prumo: ') + m.content).join('\n');
+                const system = `Você é um especialista em produtividade. Com base na conversa, crie uma rotina inicial com 3 tarefas (uma de manhã, uma à tarde, uma à noite) e 2 hábitos. Respeite o pico de energia do usuário. Responda SOMENTE com JSON válido neste formato: {"tasks":[{"title":"...","time":"HH:MM","period":"morning|afternoon|evening"}],"habits":[{"title":"...","icon":"emoji"}]}`;
+                const raw = await callAI({ system, messages: [{ role: 'user', content: transcript }], json: true });
+                const parsed = sanitizeRoutine(JSON.parse(raw.replace(/```json/g, '').replace(/```/g, '').trim()));
+                if (!parsed.tasks.length && !parsed.habits.length) throw new Error('Rotina vazia');
+
+                if (currentUser && currentUser.uid !== 'local-demo-user') {
+                    for (const t of parsed.tasks) {
+                        await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`), { ...t, completed: false, createdAt: Date.now() });
+                    }
+                    for (const h of parsed.habits) {
+                        await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/habits`), { ...h, streak: 0, completedToday: false });
+                    }
+                } else {
+                    parsed.tasks.forEach(t => tasks.push({ id: 'task-' + Date.now() + Math.random(), ...t, completed: false }));
+                    parsed.habits.forEach(h => habits.push({ id: 'habit-' + Date.now() + Math.random(), ...h, streak: 0, completedToday: false }));
+                    renderTasks();
+                    renderHabits();
+                }
+                userProfile.onboardingDone = true;
+                if (currentUser && currentUser.uid !== 'local-demo-user') {
+                    await setDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/data`), { onboardingDone: true }, { merge: true });
+                }
+                showToast("Rotina personalizada gerada com sucesso! 🚀");
+                skipOnboardingToApp();
+            } catch (err) {
+                console.error(err);
+                showToast("Não consegui gerar a rotina agora. Tente novamente em instantes.");
+                addOnboardMsg('bot', location.protocol === 'file:'
+                    ? '⚠️ Para gerar a rotina com IA, abra o site publicado na Vercel (https://...vercel.app), não o arquivo do computador.'
+                    : '⚠️ Não consegui gerar a rotina agora. Clique em "Gerar minha rotina" para tentar de novo.');
+            } finally {
+                if (loadingBox) loadingBox.classList.add('hidden');
+                if (generateBtn) generateBtn.disabled = false;
+                onboardBusy = false;
+            }
+        };
+
+        window.triggerAntiProcrastination = async function() {
+            openModal('modal-rescue');
+            const box = document.getElementById('rescue-content');
+            box.innerText = "Buscando uma instrução de resgate com a IA...";
+            try {
+                const reply = await callAI({
+                    system: 'Você é o Prumo, assistente de foco. Responda em português, em no máximo 2 frases, sem markdown, com linguagem simples e acolhedora.',
+                    messages: [{ role: 'user', content: 'Travei em uma tarefa por procrastinação. Dê uma micro-ação que leve no máximo 2 minutos para eu executar agora e vencer a inércia.' }]
+                });
+                box.innerText = cleanMarkdown(reply);
+            } catch (err) {
+                box.innerText = "Respire fundo por 5 segundos e escreva a primeira linha da sua tarefa sem se preocupar com perfeição!";
+            }
+        };
+
+        async function initAuth() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            updateThemeUI(document.documentElement.classList.contains('dark'));
+
+            try {
+                await signInAnonymously(auth);
+            } catch (err) {
+                console.warn("Firebase Auth fallback to local mode:", err);
+                currentUser = { uid: 'local-demo-user' };
+                renderTasks();
+                renderHabits();
+                renderAlarms();
+                renderEnergyLogs();
+                updateProfileUI();
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    const statusEl = document.getElementById('connection-status');
+                    if (statusEl) { statusEl.className = "w-2.5 h-2.5 rounded-full bg-emerald-500"; statusEl.title = "Conectado"; }
+                    setupFirestoreListeners();
+                }
+            });
+        }
+
+        initAuth();
+        window.startOnboardingChat();
+    </script>
+</body>
+</html>
