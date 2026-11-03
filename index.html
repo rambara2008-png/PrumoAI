@@ -82,6 +82,24 @@
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ---- Mascote Prumo ---- */
+        #prumo-mascot { position: fixed; top: 4px; left: 8px; width: 48px; height: 52px; z-index: 70; cursor: pointer; transition: transform 1.4s cubic-bezier(.5,0,.2,1); transform-origin: top left; will-change: transform; }
+        #prumo-mascot .pm-wrap { width: 100%; height: 100%; animation: pm-wander 9s ease-in-out infinite, pm-bob 1.6s ease-in-out infinite; }
+        #prumo-mascot.center .pm-wrap { animation: pm-bob 1.2s ease-in-out infinite; }
+        #prumo-mascot:hover .pm-wrap { animation: pm-jump .5s ease-out 2; }
+        .pm-eyes { transform-origin: 50px 55px; animation: pm-blink 4.2s infinite; }
+        .pm-arm-l { transform-origin: 24px 62px; animation: pm-wave 2.4s ease-in-out infinite; }
+        .pm-arm-r { transform-origin: 76px 62px; animation: pm-wave 2.4s ease-in-out infinite reverse; }
+        @keyframes pm-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+        @keyframes pm-wander { 0%,100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(6px) rotate(5deg); } 50% { transform: translateX(2px) rotate(-3deg); } 75% { transform: translateX(8px) rotate(4deg); } }
+        @keyframes pm-jump { 0% { transform: translateY(0); } 40% { transform: translateY(-10px) scale(1.05); } 100% { transform: translateY(0); } }
+        @keyframes pm-blink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+        @keyframes pm-wave { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-18deg); } }
+        #prumo-bubble { position: fixed; z-index: 69; max-width: 240px; padding: 8px 12px; border-radius: 14px; font-size: 12px; font-weight: 700; background: #fff; color: #27272a; box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .3s; top: 12px; left: 66px; }
+        .dark #prumo-bubble { background: #27272a; color: #f4f4f5; }
+        #prumo-bubble.show { opacity: 1; }
+        @media (prefers-reduced-motion: reduce) { #prumo-mascot .pm-wrap, .pm-eyes, .pm-arm-l, .pm-arm-r { animation: none !important; } }
     </style>
 </head>
 <body class="bg-zinc-100 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100 h-full flex flex-col antialiased transition-colors duration-300">
@@ -90,9 +108,7 @@
     <header class="glass-panel sticky top-0 z-40 px-4 py-3 flex items-center justify-between shadow-xs">
         <div class="flex items-center gap-3">
             <!-- Animated Logo -->
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20 logo-animated">
-                <i class="ph-bold ph-compass text-2xl"></i>
-            </div>
+            <div class="w-12 h-10 shrink-0" aria-hidden="true"></div>
             <div class="flex items-center gap-2">
                 <div>
                     <span class="font-black text-xl tracking-tight bg-gradient-to-r from-amber-600 via-orange-600 to-emerald-600 dark:from-amber-400 dark:via-orange-400 dark:to-emerald-400 bg-clip-text text-transparent">Prumo</span>
@@ -183,7 +199,7 @@
             </div>
 
             <!-- Diagnóstico em formato de conversa -->
-            <div id="onboarding-chat" class="p-6 space-y-3 overflow-y-auto h-80"></div>
+            <div id="onboarding-chat" class="p-6 space-y-3 overflow-y-auto h-80"><div class="flex justify-start"><div class="bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed">Oi! Eu sou o Prumo 👋 Vou te fazer algumas perguntas rápidas para montar sua rotina. Para começar: qual é o seu objetivo principal no momento?</div></div></div>
 
             <div id="onboarding-loading-box" class="hidden mx-6 mb-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-3">
                 <div class="w-5 h-5 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
@@ -219,10 +235,6 @@
                     <i class="ph-bold ph-fire text-xl"></i>
                     <span>Hábitos & Níveis</span>
                 </button>
-                <button onclick="switchTab('tab-focus')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-all" data-tab="tab-focus">
-                    <i class="ph-bold ph-timer text-xl"></i>
-                    <span>Foco & Frequências</span>
-                </button>
                 <button onclick="switchTab('tab-alarm')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-all" data-tab="tab-alarm">
                     <i class="ph-bold ph-alarm text-xl"></i>
                     <span>Despertador & Alarmes</span>
@@ -254,66 +266,120 @@
         <main class="flex-1 overflow-y-auto relative p-4 md:p-6 lg:p-8 space-y-6 pb-24 md:pb-8">
 
             <!-- TAB 1: CRONOGRAMA & BLOCOS DE TEMPO -->
-            <section id="tab-schedule" class="tab-content animate-fade-in max-w-5xl mx-auto space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <section id="tab-schedule" class="tab-content animate-fade-in max-w-5xl mx-auto space-y-5">
+                <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h2 class="text-2xl font-black tracking-tight">Cronograma Diário</h2>
-                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Organize seu dia em blocos focados de tempo.</p>
+                        <p id="sched-date" class="text-[11px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400"></p>
+                        <h2 id="sched-greeting" class="text-2xl font-black tracking-tight">Olá!</h2>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">Planeje seus blocos, foque em um de cada vez e conclua.</p>
                     </div>
-                    <button onclick="openAddTaskModal()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all">
-                        <i class="ph-bold ph-plus"></i> Novo Bloco
-                    </button>
+                    <button onclick="openAddTaskModal()" class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-md shadow-amber-500/20"><i class="ph-bold ph-plus"></i> Novo bloco</button>
                 </div>
 
-                <!-- Stats Bar -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                        <span class="text-xs font-bold text-zinc-500">Blocos do Dia</span>
-                        <div class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1" id="stat-total-tasks">0</div>
-                    </div>
-                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                        <span class="text-xs font-bold text-zinc-500">Concluídos</span>
-                        <div class="text-2xl font-black text-emerald-500 mt-1" id="stat-completed-tasks">0</div>
-                    </div>
-                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                        <span class="text-xs font-bold text-zinc-500">Conclusão</span>
-                        <div class="text-2xl font-black text-orange-500 mt-1" id="stat-completion-rate">0%</div>
-                    </div>
-                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                        <span class="text-xs font-bold text-zinc-500">XP de Hoje</span>
-                        <div class="text-2xl font-black text-amber-500 mt-1" id="stat-today-xp">+0 XP</div>
-                    </div>
-                </div>
-
-                <!-- Time Blocks -->
-                <div class="space-y-6">
-                    <!-- Manhã -->
-                    <div class="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800">
-                        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
-                            <i class="ph-fill ph-sun text-amber-500 text-xl"></i>
-                            <h3 class="font-bold text-zinc-800 dark:text-zinc-200">Manhã — Foco Prioritário</h3>
-                            <span class="text-xs bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-full font-bold ml-auto">Alta Energia</span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-4">
+                        <div class="relative w-16 h-16 shrink-0">
+                            <svg viewBox="0 0 64 64" class="w-full h-full -rotate-90"><circle cx="32" cy="32" r="26" fill="none" stroke-width="7" class="stroke-zinc-200 dark:stroke-zinc-800"/><circle id="sched-ring" cx="32" cy="32" r="26" fill="none" stroke-width="7" stroke-linecap="round" stroke="#10b981" stroke-dasharray="163.4" stroke-dashoffset="163.4" style="transition: stroke-dashoffset .6s ease"/></svg>
+                            <span id="sched-percent" class="absolute inset-0 flex items-center justify-center text-sm font-black">0%</span>
                         </div>
+                        <div><p class="text-[11px] font-bold text-zinc-500">Progresso do dia</p><p id="sched-progress-text" class="text-sm font-extrabold">0 de 0 concluídos</p></div>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                        <p class="text-[11px] font-bold text-zinc-500">Próximo bloco</p>
+                        <p id="sched-next-title" class="text-sm font-extrabold truncate">—</p>
+                        <p id="sched-next-meta" class="text-[11px] text-zinc-500">Nenhum bloco pendente</p>
+                        <button id="sched-next-btn" onclick="focusOnNext()" class="hidden mt-2 text-[11px] font-extrabold px-3 py-1.5 rounded-full bg-amber-500 text-white items-center gap-1"><i class="ph-bold ph-play"></i> Focar agora</button>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 grid grid-cols-3 gap-2 text-center">
+                        <div><p class="text-[10px] font-bold text-zinc-500">Planejado</p><p id="sched-planned" class="text-sm font-black text-amber-600 dark:text-amber-400 mt-1">0 min</p></div>
+                        <div><p class="text-[10px] font-bold text-zinc-500">Foco feito</p><p id="sched-focus-min" class="text-sm font-black text-emerald-500 mt-1">0 min</p></div>
+                        <div><p class="text-[10px] font-bold text-zinc-500">XP de hoje</p><p id="stat-today-xp" class="text-sm font-black text-orange-500 mt-1">+0</p></div>
+                    </div>
+                </div>
+
+                <!-- FOCO integrado -->
+                <div id="focus-card" class="glass-card rounded-3xl p-5 border border-zinc-200 dark:border-zinc-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-extrabold text-sm flex items-center gap-2"><i class="ph-bold ph-timer text-amber-500"></i> Foco</h3>
+                        <span id="focus-phase-badge" class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300">Pronto para focar</span>
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-6 items-center">
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="relative w-44 h-44">
+                                <svg viewBox="0 0 120 120" class="w-full h-full -rotate-90"><circle cx="60" cy="60" r="52" fill="none" stroke-width="9" class="stroke-zinc-200 dark:stroke-zinc-800"/><circle id="focus-ring" cx="60" cy="60" r="52" fill="none" stroke-width="9" stroke-linecap="round" stroke="#f59e0b" stroke-dasharray="326.7" stroke-dashoffset="0" style="transition: stroke-dashoffset .5s linear"/></svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span id="timer-display" class="text-4xl font-black font-mono tracking-tighter">25:00</span>
+                                    <span id="focus-cycle" class="text-[10px] font-bold text-zinc-500">Ciclo 1 de 4</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 w-full max-w-[15rem]">
+                                <button onclick="toggleFocus()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-2xl font-bold shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 text-sm"><i id="timer-icon" class="ph-bold ph-play text-lg"></i><span id="focus-main-label">Iniciar</span></button>
+                                <button onclick="resetFocus()" title="Reiniciar" class="px-3.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-2xl"><i class="ph-bold ph-arrow-counter-clockwise text-lg"></i></button>
+                                <button onclick="skipFocusPhase()" title="Pular etapa" class="px-3.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-2xl"><i class="ph-bold ph-skip-forward text-lg"></i></button>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[11px] font-bold text-zinc-500">Em que você vai focar?</label>
+                                <select id="focus-task-select" onchange="focusTaskId = this.value; renderFocus();" class="w-full mt-1 bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm outline-none border border-transparent focus:border-amber-500"></select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-zinc-500">Ritmo (foco / pausa)</label>
+                                <div class="flex flex-wrap gap-2 mt-1">
+                                    <button data-preset="25-5" onclick="setFocusPreset(25,5)" class="focus-preset px-3 py-2 rounded-xl text-xs font-bold bg-zinc-100 dark:bg-zinc-800">25 / 5 min</button>
+                                    <button data-preset="50-10" onclick="setFocusPreset(50,10)" class="focus-preset px-3 py-2 rounded-xl text-xs font-bold bg-zinc-100 dark:bg-zinc-800">50 / 10 min</button>
+                                    <button data-preset="15-3" onclick="setFocusPreset(15,3)" class="focus-preset px-3 py-2 rounded-xl text-xs font-bold bg-zinc-100 dark:bg-zinc-800">15 / 3 min</button>
+                                </div>
+                                <div class="flex gap-2 mt-2">
+                                    <input id="focus-custom-min" type="number" min="5" max="120" placeholder="Outro tempo (min)" class="flex-1 bg-zinc-100 dark:bg-zinc-800 p-2.5 rounded-xl text-xs outline-none border border-transparent focus:border-amber-500">
+                                    <button onclick="useCustomFocus()" class="px-3 rounded-xl text-xs font-bold bg-zinc-200 dark:bg-zinc-700">Usar</button>
+                                </div>
+                            </div>
+                            <button id="focus-done-btn" onclick="completeFocusTask()" class="hidden w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs items-center justify-center gap-2"><i class="ph-bold ph-check-circle"></i> <span id="focus-done-label">Concluir bloco</span></button>
+                            <div>
+                                <label class="text-[11px] font-bold text-zinc-500">Som ambiente (opcional)</label>
+                                <div class="mt-1"><div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button id="freq-btn-calm" onclick="toggleFrequency('calm')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
+                            <span class="text-xl">🧘</span>
+                            <span class="font-bold text-xs">432 Hz - Calma</span>
+                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
+                        </button>
+                        <button id="freq-btn-sleep" onclick="toggleFrequency('sleep')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
+                            <span class="text-xl">💤</span>
+                            <span class="font-bold text-xs">174 Hz - Sono</span>
+                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
+                        </button>
+                        <button id="freq-btn-prosperity" onclick="toggleFrequency('prosperity')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
+                            <span class="text-xl">✨</span>
+                            <span class="font-bold text-xs">528 Hz - Prosperidade</span>
+                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
+                        </button>
+                    </div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de blocos -->
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="flex gap-1 bg-zinc-200/60 dark:bg-zinc-800/60 p-1 rounded-xl">
+                        <button data-filter="all" onclick="setTaskFilter('all')" class="task-filter px-3 py-1.5 rounded-lg text-xs font-bold">Todos</button>
+                        <button data-filter="pending" onclick="setTaskFilter('pending')" class="task-filter px-3 py-1.5 rounded-lg text-xs font-bold">Pendentes</button>
+                        <button data-filter="done" onclick="setTaskFilter('done')" class="task-filter px-3 py-1.5 rounded-lg text-xs font-bold">Concluídos</button>
+                    </div>
+                    <button onclick="clearCompletedTasks()" class="text-xs font-bold text-zinc-500 hover:text-rose-500 flex items-center gap-1"><i class="ph-bold ph-broom"></i> Limpar concluídos</button>
+                </div>
+                <div class="space-y-4">
+                    <div class="glass-card rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-200/80 dark:border-zinc-800"><i class="ph-fill ph-sun text-amber-500 text-xl"></i><h3 class="font-bold text-sm">Manhã</h3><span id="block-meta-morning" class="text-[11px] font-bold text-zinc-500 ml-auto"></span></div>
                         <div id="tasks-morning" class="space-y-2"></div>
                     </div>
-
-                    <!-- Tarde -->
-                    <div class="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800">
-                        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
-                            <i class="ph-fill ph-sun-dim text-orange-500 text-xl"></i>
-                            <h3 class="font-bold text-zinc-800 dark:text-zinc-200">Tarde — Execução & Reuniões</h3>
-                            <span class="text-xs bg-orange-100 text-orange-900 dark:bg-orange-950/60 dark:text-orange-300 px-2 py-0.5 rounded-full font-bold ml-auto">Energia Média</span>
-                        </div>
+                    <div class="glass-card rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-200/80 dark:border-zinc-800"><i class="ph-fill ph-sun-dim text-orange-500 text-xl"></i><h3 class="font-bold text-sm">Tarde</h3><span id="block-meta-afternoon" class="text-[11px] font-bold text-zinc-500 ml-auto"></span></div>
                         <div id="tasks-afternoon" class="space-y-2"></div>
                     </div>
-
-                    <!-- Noite -->
-                    <div class="glass-card rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800">
-                        <div class="flex items-center gap-2 mb-4 pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
-                            <i class="ph-fill ph-moon text-emerald-500 text-xl"></i>
-                            <h3 class="font-bold text-zinc-800 dark:text-zinc-200">Noite — Desaceleração & Planejamento</h3>
-                            <span class="text-xs bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold ml-auto">Recuperação</span>
-                        </div>
+                    <div class="glass-card rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-200/80 dark:border-zinc-800"><i class="ph-fill ph-moon text-emerald-500 text-xl"></i><h3 class="font-bold text-sm">Noite</h3><span id="block-meta-evening" class="text-[11px] font-bold text-zinc-500 ml-auto"></span></div>
                         <div id="tasks-evening" class="space-y-2"></div>
                     </div>
                 </div>
@@ -345,52 +411,7 @@
             </section>
 
             <!-- TAB 3: FOCO & FREQUENCIAS -->
-            <section id="tab-focus" class="tab-content hidden animate-fade-in max-w-5xl mx-auto space-y-6">
-                <div class="text-center">
-                    <h2 class="text-2xl font-black tracking-tight">Modo Foco</h2>
-                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Pomodoro e Frequências Sonoras.</p>
-                </div>
-                
-                <div class="glass-card max-w-md mx-auto p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex flex-col items-center">
-                    <div class="flex gap-2 mb-8 bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded-2xl">
-                        <button onclick="setFocusMode('work')" class="px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-zinc-700 shadow-sm">25:00</button>
-                        <button onclick="setFocusMode('shortBreak')" class="px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/50 dark:hover:bg-zinc-700/50">05:00</button>
-                        <button onclick="setFocusMode('longBreak')" class="px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/50 dark:hover:bg-zinc-700/50">15:00</button>
-                    </div>
-                    
-                    <div class="text-7xl font-black font-mono tracking-tighter text-zinc-800 dark:text-zinc-100 mb-8" id="timer-display">25:00</div>
-                    
-                    <div class="flex gap-4 w-full">
-                        <button onclick="toggleTimer()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
-                            <i id="timer-icon" class="ph-bold ph-play text-xl"></i>
-                        </button>
-                        <button onclick="resetTimer()" class="px-6 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-600 dark:text-zinc-300 py-4 rounded-2xl font-bold shadow-md flex items-center justify-center">
-                            <i class="ph-bold ph-arrow-counter-clockwise text-xl"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="max-w-2xl mx-auto space-y-4">
-                    <h3 class="font-bold text-sm text-zinc-800 dark:text-zinc-200 flex items-center gap-2"><i class="ph-bold ph-waveform text-amber-500"></i> Frequências Solfeggio</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <button id="freq-btn-calm" onclick="toggleFrequency('calm')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
-                            <span class="text-xl">🧘</span>
-                            <span class="font-bold text-xs">432 Hz - Calma</span>
-                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
-                        </button>
-                        <button id="freq-btn-sleep" onclick="toggleFrequency('sleep')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
-                            <span class="text-xl">💤</span>
-                            <span class="font-bold text-xs">174 Hz - Sono</span>
-                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
-                        </button>
-                        <button id="freq-btn-prosperity" onclick="toggleFrequency('prosperity')" class="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100/50 dark:bg-zinc-800/50 flex flex-col items-center gap-2 transition-all">
-                            <span class="text-xl">✨</span>
-                            <span class="font-bold text-xs">528 Hz - Prosperidade</span>
-                            <span class="status-indicator text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Off</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
+            
 
             <!-- TAB 4: DESPERTADOR & ALARMES -->
             <section id="tab-alarm" class="tab-content hidden animate-fade-in max-w-5xl mx-auto space-y-6">
@@ -554,10 +575,6 @@
             <i class="ph-bold ph-fire text-xl"></i>
             <span class="text-[9px] font-bold">Hábitos</span>
         </button>
-        <button onclick="switchTab('tab-focus')" class="nav-btn flex-shrink-0 min-w-[4rem] flex flex-col items-center gap-1 text-zinc-500 p-1" data-tab="tab-focus">
-            <i class="ph-bold ph-timer text-xl"></i>
-            <span class="text-[9px] font-bold">Foco</span>
-        </button>
         <button onclick="switchTab('tab-alarm')" class="nav-btn flex-shrink-0 min-w-[4rem] flex flex-col items-center gap-1 text-zinc-500 p-1" data-tab="tab-alarm">
             <i class="ph-bold ph-alarm text-xl"></i>
             <span class="text-[9px] font-bold">Alarmes</span>
@@ -580,16 +597,23 @@
                 <button onclick="closeModal('modal-task')" class="text-zinc-400 hover:text-zinc-600"><i class="ph-bold ph-x text-xl"></i></button>
             </div>
             <form onsubmit="handleAddTask(event)" class="space-y-3">
-                <input type="text" id="task-title-input" required placeholder="Título da Tarefa / Bloco" class="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm border border-transparent focus:border-amber-500 outline-none">
+                <input type="text" id="task-title-input" required maxlength="80" placeholder="O que você vai fazer? (ex.: Estudar matemática)" class="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm border border-transparent focus:border-amber-500 outline-none">
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="time" id="task-time-input" required class="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm outline-none">
-                    <select id="task-period-input" class="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm outline-none">
-                        <option value="morning">Manhã</option>
-                        <option value="afternoon">Tarde</option>
-                        <option value="evening">Noite</option>
-                    </select>
+                    <div><label class="text-[11px] font-bold text-zinc-500">Horário</label><input type="time" id="task-time-input" required class="w-full mt-1 bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm outline-none"></div>
+                    <div><label class="text-[11px] font-bold text-zinc-500">Prioridade</label>
+                        <select id="task-priority-input" class="w-full mt-1 bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl text-sm outline-none"><option value="high">🔴 Alta</option><option value="mid" selected>🟡 Média</option><option value="low">🟢 Baixa</option></select></div>
                 </div>
-                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl text-sm shadow-md">Adicionar (+15 XP)</button>
+                <div>
+                    <label class="text-[11px] font-bold text-zinc-500">Duração</label>
+                    <div class="flex flex-wrap gap-2 mt-1 items-center">
+                        <button type="button" onclick="setQuickDuration(15)" class="dur-chip px-3 py-1.5 rounded-full text-xs font-bold bg-zinc-100 dark:bg-zinc-800">15 min</button>
+                        <button type="button" onclick="setQuickDuration(25)" class="dur-chip px-3 py-1.5 rounded-full text-xs font-bold bg-zinc-100 dark:bg-zinc-800">25 min</button>
+                        <button type="button" onclick="setQuickDuration(45)" class="dur-chip px-3 py-1.5 rounded-full text-xs font-bold bg-zinc-100 dark:bg-zinc-800">45 min</button>
+                        <button type="button" onclick="setQuickDuration(60)" class="dur-chip px-3 py-1.5 rounded-full text-xs font-bold bg-zinc-100 dark:bg-zinc-800">1 h</button>
+                        <input type="number" id="task-duration-input" min="5" max="480" value="25" class="w-20 bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded-lg text-xs text-center outline-none" oninput="highlightDuration()">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl text-sm shadow-md">Adicionar bloco (+15 XP)</button>
             </form>
         </div>
     </div>
@@ -710,6 +734,41 @@
             <div class="text-[10px] text-zinc-400 mt-4">
                 Dica: se abriu o link pelo WhatsApp ou Instagram, abra no Chrome ou Safari para o login com Google funcionar.
             </div>
+        </div>
+    </div>
+
+
+    <!-- MASCOTE PRUMO -->
+    <div id="prumo-bubble" role="status"></div>
+    <div id="prumo-mascot" onclick="prumoMascotClick()" title="Oi! Sou o Prumo"><div class="pm-wrap"><svg viewBox="0 0 100 110" class="w-full h-full overflow-visible" aria-label="Prumo, o mascote">
+  <ellipse cx="50" cy="104" rx="26" ry="5" fill="#000" opacity=".12"/>
+  <g class="pm-arm-l"><ellipse cx="17" cy="66" rx="8" ry="6" fill="#f59e0b" transform="rotate(-25 17 66)"/></g>
+  <g class="pm-arm-r"><ellipse cx="83" cy="66" rx="8" ry="6" fill="#f59e0b" transform="rotate(25 83 66)"/></g>
+  <ellipse cx="38" cy="98" rx="10" ry="6" fill="#ea580c"/><ellipse cx="62" cy="98" rx="10" ry="6" fill="#ea580c"/>
+  <path d="M50 8 v14" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M50 12 q-14 -10 -20 0 q10 8 20 0z" fill="#34d399"/><path d="M50 12 q14 -10 20 0 q-10 8 -20 0z" fill="#10b981"/>
+  <ellipse cx="50" cy="62" rx="36" ry="34" fill="#fbbf24"/>
+  <ellipse cx="50" cy="70" rx="26" ry="22" fill="#fde68a" opacity=".65"/>
+  <g class="pm-eyes"><ellipse cx="37" cy="55" rx="6.5" ry="8" fill="#292524"/><ellipse cx="63" cy="55" rx="6.5" ry="8" fill="#292524"/>
+  <circle cx="39.5" cy="52" r="2.4" fill="#fff"/><circle cx="65.5" cy="52" r="2.4" fill="#fff"/></g>
+  <ellipse cx="27" cy="69" rx="6" ry="4" fill="#fb7185" opacity=".6"/><ellipse cx="73" cy="69" rx="6" ry="4" fill="#fb7185" opacity=".6"/>
+  <path d="M41 72 q9 11 18 0" fill="none" stroke="#292524" stroke-width="3.2" stroke-linecap="round"/>
+</svg></div></div>
+    <div id="prumo-checkin" class="fixed inset-0 z-[65] hidden bg-zinc-900/60 backdrop-blur-sm items-end sm:items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-sm p-5 mt-40 sm:mt-56">
+            <button onclick="closePrumoCheckin()" class="float-right text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" title="Fechar"><i class="ph-bold ph-x"></i></button>
+            <p id="pc-question" class="text-sm font-extrabold text-zinc-800 dark:text-zinc-100 leading-snug mb-3 pr-6"></p>
+            <div id="pc-reply" class="hidden text-sm text-zinc-700 dark:text-zinc-200 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 mb-3 leading-relaxed"></div>
+            <div id="pc-chips" class="flex flex-wrap gap-2 mb-3">
+                <button onclick="prumoAnswer('Foi ótimo! 😄')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">😄 Ótimo</button>
+                <button onclick="prumoAnswer('Foi normal, nada demais. 🙂')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">🙂 Normal</button>
+                <button onclick="prumoAnswer('Foi um dia difícil. 😕')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30">😕 Difícil</button>
+            </div>
+            <div class="flex gap-2">
+                <input id="pc-input" type="text" maxlength="400" autocomplete="off" placeholder="Ou conte com suas palavras..." onkeydown="if(event.key==='Enter'){prumoAnswer();}" class="flex-1 p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm outline-none focus:border-amber-500">
+                <button id="pc-send" onclick="prumoAnswer()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 rounded-xl" title="Enviar"><i class="ph-bold ph-paper-plane-tilt"></i></button>
+            </div>
+            <p class="text-[10px] text-zinc-400 mt-3 leading-snug">🔒 O Prumo não salva o que você escreve aqui. A resposta é enviada à IA só para gerar a conversa e some ao fechar.</p>
         </div>
     </div>
 
@@ -1161,6 +1220,7 @@
                     }
                 } else {
                     document.getElementById('onboarding-screen').classList.remove('hidden');
+                    if (!document.getElementById('onboarding-chat').children.length) window.startOnboardingChat();
                     setDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/data`), { xp: 0, level: 1, onboardingDone: false });
                 }
             });
@@ -1184,61 +1244,132 @@
             });
         };
 
+        // ---------- Cronograma ----------
+        let taskFilter = 'all';
+        let nextTaskId = '';
+        const PRIO = { high: { label: 'Alta', dot: 'bg-rose-500' }, mid: { label: 'Média', dot: 'bg-amber-500' }, low: { label: 'Baixa', dot: 'bg-emerald-500' } };
+        const PERIODS = { morning: 'Manhã', afternoon: 'Tarde', evening: 'Noite' };
+
+        function isLocalUser() { return !currentUser || currentUser.uid === 'local-demo-user'; }
+        function periodFromTime(t) { const h = parseInt((t || '12:00').split(':')[0], 10); return h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'; }
+        function nowHHMM() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+        function fmtMin(m) { m = Math.round(m || 0); return m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ' ' + (m % 60) + 'min' : ''}` : `${m} min`; }
+
+        window.openAddTaskModal = function() {
+            document.getElementById('task-title-input').value = '';
+            const d = new Date(); d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0);
+            document.getElementById('task-time-input').value = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            document.getElementById('task-priority-input').value = 'mid';
+            setQuickDuration(25);
+            openModal('modal-task');
+        };
+        window.setQuickDuration = function(n) { document.getElementById('task-duration-input').value = n; highlightDuration(); };
+        window.highlightDuration = function() {
+            const v = parseInt(document.getElementById('task-duration-input').value, 10);
+            document.querySelectorAll('.dur-chip').forEach(b => {
+                const on = b.textContent.trim() === (v === 60 ? '1 h' : v + ' min');
+                b.classList.toggle('bg-amber-500', on); b.classList.toggle('text-white', on);
+            });
+        };
+
         window.handleAddTask = async function(e) {
             e.preventDefault();
             if (!currentUser) return;
             const title = document.getElementById('task-title-input').value.trim();
             const time = document.getElementById('task-time-input').value;
-            const period = document.getElementById('task-period-input').value;
+            const priority = document.getElementById('task-priority-input').value;
+            const duration = Math.min(480, Math.max(5, parseInt(document.getElementById('task-duration-input').value, 10) || 25));
             if (!title) return;
-            await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`), { title, time, period, completed: false, createdAt: Date.now() });
+            const data = { title, time, period: periodFromTime(time), priority, duration, completed: false, createdAt: Date.now() };
+            if (isLocalUser()) { tasks.push({ id: 'task-' + Date.now(), ...data }); renderTasks(); }
+            else await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`), data);
             closeModal('modal-task');
             addXP(15);
         };
 
         window.toggleTask = async function(id, status) {
             if (!currentUser) return;
-            await updateDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks/${id}`), { completed: !status });
+            if (isLocalUser()) { const t = tasks.find(x => x.id === id); if (t) t.completed = !status; renderTasks(); }
+            else await updateDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks/${id}`), { completed: !status });
             if (!status) addXP(15);
         };
 
         window.deleteTask = async function(id) {
             if (!currentUser) return;
-            await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks/${id}`));
+            if (isLocalUser()) { tasks = tasks.filter(x => x.id !== id); renderTasks(); }
+            else await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks/${id}`));
         };
 
-        function renderTasks() {
-            const morning = document.getElementById('tasks-morning');
-            const afternoon = document.getElementById('tasks-afternoon');
-            const evening = document.getElementById('tasks-evening');
-            if(!morning) return;
-            morning.innerHTML = ''; afternoon.innerHTML = ''; evening.innerHTML = '';
+        window.clearCompletedTasks = async function() {
+            const done = tasks.filter(t => t.completed);
+            if (!done.length) return showToast('Nenhum bloco concluído para limpar.');
+            if (!confirm(`Remover ${done.length} bloco(s) concluído(s)?`)) return;
+            for (const t of done) await window.deleteTask(t.id);
+        };
 
-            let total = tasks.length;
-            let completed = tasks.filter(t => t.completed).length;
-            document.getElementById('stat-total-tasks').innerText = total;
-            document.getElementById('stat-completed-tasks').innerText = completed;
-            document.getElementById('stat-completion-rate').innerText = total === 0 ? '0%' : `${Math.round((completed/total)*100)}%`;
-            document.getElementById('stat-today-xp').innerText = `+${completed * 15} XP`;
+        window.setTaskFilter = function(f) { taskFilter = f; renderTasks(); };
 
-            tasks.forEach(task => {
-                const item = document.createElement('div');
-                item.className = `flex items-center justify-between p-3 rounded-xl border ${task.completed ? 'bg-zinc-100/50 dark:bg-zinc-900/30 border-zinc-200 dark:border-zinc-800 opacity-60' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 shadow-xs'} transition-all`;
-                item.innerHTML = `
-                    <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="toggleTask('${task.id}', ${task.completed})">
-                        <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-400'}">
-                            ${task.completed ? '✓' : ''}
+        function taskRowHTML(task, now) {
+            const prio = PRIO[task.priority] || PRIO.mid;
+            const late = !task.completed && task.time && task.time < now;
+            const dur = task.duration ? `<span class="text-[11px] text-zinc-400 font-semibold">${fmtMin(task.duration)}</span>` : '';
+            return `
+                <div class="flex items-center gap-2 p-3 rounded-xl border ${task.completed ? 'opacity-60 border-zinc-200 dark:border-zinc-800' : 'border-zinc-200 dark:border-zinc-700 bg-white/60 dark:bg-zinc-800/40'}">
+                    <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="toggleTask('${task.id}', ${!!task.completed})">
+                        <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 text-xs ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-400'}">${task.completed ? '✓' : ''}</div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold truncate ${task.completed ? 'line-through text-zinc-400' : ''}">${escapeHTML(task.title)}</p>
+                            <p class="flex items-center gap-2 mt-0.5"><span class="text-[11px] font-black text-amber-600 dark:text-amber-400">${task.time || '--:--'}</span>${dur}<span class="flex items-center gap-1 text-[10px] font-bold text-zinc-400"><span class="inline-block w-1.5 h-1.5 rounded-full ${prio.dot}"></span>${prio.label}</span>${late ? '<span class="text-[10px] font-extrabold text-rose-500">Atrasado</span>' : ''}</p>
                         </div>
-                        <span class="text-xs font-black text-amber-500 min-w-[45px]">${task.time || '--:--'}</span>
-                        <span class="text-xs font-semibold ${task.completed ? 'line-through text-zinc-400' : ''}">${escapeHTML(task.title)}</span>
                     </div>
-                    <button onclick="deleteTask('${task.id}')" class="text-zinc-400 hover:text-red-500 p-1"><i class="ph-bold ph-trash"></i></button>
-                `;
-                if (task.period === 'morning') morning.appendChild(item);
-                else if (task.period === 'evening') evening.appendChild(item);
-                else afternoon.appendChild(item);
-            });
+                    ${task.completed ? '' : `<button onclick="focusOnTask('${task.id}')" title="Focar neste bloco" class="shrink-0 w-8 h-8 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white flex items-center justify-center"><i class="ph-bold ph-play"></i></button>`}
+                    <button onclick="deleteTask('${task.id}')" title="Excluir" class="shrink-0 text-zinc-400 hover:text-rose-500 p-1"><i class="ph-bold ph-trash"></i></button>
+                </div>`;
         }
+
+        function renderTasks() {
+            if (!document.getElementById('tasks-morning')) return;
+            const now = nowHHMM();
+            const d = new Date();
+            const hour = d.getHours();
+            document.getElementById('sched-date').innerText = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+            document.getElementById('sched-greeting').innerText = hour < 12 ? 'Bom dia!' : hour < 18 ? 'Boa tarde!' : 'Boa noite!';
+
+            const total = tasks.length;
+            const done = tasks.filter(t => t.completed).length;
+            const pct = total ? Math.round((done / total) * 100) : 0;
+            document.getElementById('sched-percent').innerText = pct + '%';
+            document.getElementById('sched-progress-text').innerText = `${done} de ${total} concluído${total === 1 ? '' : 's'}`;
+            document.getElementById('sched-ring').style.strokeDashoffset = 163.4 * (1 - pct / 100);
+            document.getElementById('sched-planned').innerText = fmtMin(tasks.filter(t => !t.completed).reduce((a, t) => a + (t.duration || 0), 0));
+            document.getElementById('sched-focus-min').innerText = fmtMin(focusTodayMin);
+            document.getElementById('stat-today-xp').innerText = `+${done * 15}`;
+
+            const sorted = [...tasks].sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+            const pending = sorted.filter(t => !t.completed);
+            const next = pending.find(t => (t.time || '') >= now) || pending[0];
+            nextTaskId = next ? next.id : '';
+            document.getElementById('sched-next-title').innerText = next ? next.title : '—';
+            document.getElementById('sched-next-meta').innerText = next ? `${next.time || '--:--'}${next.duration ? ' · ' + fmtMin(next.duration) : ''}${next.time && next.time < now ? ' · atrasado' : ''}` : (total ? 'Tudo concluído! 🎉' : 'Nenhum bloco ainda');
+            const nb = document.getElementById('sched-next-btn');
+            nb.classList.toggle('hidden', !next); nb.classList.toggle('inline-flex', !!next);
+
+            document.querySelectorAll('.task-filter').forEach(b => {
+                const on = b.dataset.filter === taskFilter;
+                b.classList.toggle('bg-white', on); b.classList.toggle('dark:bg-zinc-700', on); b.classList.toggle('shadow-sm', on);
+            });
+            const visible = sorted.filter(t => taskFilter === 'all' || (taskFilter === 'done' ? t.completed : !t.completed));
+            Object.keys(PERIODS).forEach(p => {
+                const list = visible.filter(t => (t.period || periodFromTime(t.time)) === p);
+                const all = sorted.filter(t => (t.period || periodFromTime(t.time)) === p);
+                document.getElementById('tasks-' + p).innerHTML = list.length
+                    ? list.map(t => taskRowHTML(t, now)).join('')
+                    : `<p class="text-xs text-zinc-400 py-3 text-center">${all.length ? 'Nada para mostrar neste filtro.' : 'Sem blocos. Toque em "Novo bloco" para planejar este período.'}</p>`;
+                document.getElementById('block-meta-' + p).innerText = all.length ? `${all.length} bloco${all.length > 1 ? 's' : ''} · ${fmtMin(all.reduce((a, t) => a + (t.duration || 0), 0))}` : '';
+            });
+            refreshFocusSelect(pending);
+        }
+        setInterval(() => { try { renderTasks(); } catch (e) {} }, 60000);
 
         window.handleAddHabit = async function(e) {
             e.preventDefault();
@@ -1311,55 +1442,149 @@
             if (document.getElementById('gamification-level-title')) document.getElementById('gamification-level-title').innerText = `Nível ${level} — Mestre do Prumo`;
         }
 
-        let timerInterval = null;
-        let timerSeconds = 25 * 60;
-        let isTimerRunning = false;
+        // ---------- Foco integrado ao cronograma (nada é salvo) ----------
+        const FOCUS_RING = 326.7;
+        const BASE_TITLE = document.title;
+        let focusCfg = { work: 25, short: 5, long: 15 };
+        let focusPhase = 'work';     // work | short | long
+        let focusCycle = 1;
+        let focusTotal = 25 * 60;
+        let focusRemaining = 25 * 60;
+        let focusEndAt = 0;
+        let focusRunning = false;
+        let focusTick = null;
+        let focusTaskId = '';
+        let focusTodayMin = 0;
+        let focusAudio = null;
 
-        window.setFocusMode = function(mode) {
-            clearInterval(timerInterval);
-            isTimerRunning = false;
-            document.getElementById('timer-icon').className = 'ph-bold ph-play';
-            if (mode === 'work') timerSeconds = 25 * 60;
-            else if (mode === 'shortBreak') timerSeconds = 5 * 60;
-            else if (mode === 'longBreak') timerSeconds = 15 * 60;
-            updateTimerDisplay();
+        function fmtClock(sec) { return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); }
+
+        function focusBeep() {
+            try {
+                const C = window.AudioContext || window.webkitAudioContext;
+                if (!C) return;
+                if (!focusAudio) focusAudio = new C();
+                [0, 0.35, 0.7].forEach(delay => {
+                    const o = focusAudio.createOscillator(), g = focusAudio.createGain();
+                    o.frequency.value = 880; o.connect(g); g.connect(focusAudio.destination);
+                    const t = focusAudio.currentTime + delay;
+                    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+                    o.start(t); o.stop(t + 0.3);
+                });
+            } catch (e) {}
+        }
+
+        function phaseSeconds(p) { return (p === 'work' ? focusCfg.work : p === 'short' ? focusCfg.short : focusCfg.long) * 60; }
+
+        window.renderFocus = function() {
+            const disp = document.getElementById('timer-display');
+            if (!disp) return;
+            disp.innerText = fmtClock(focusRemaining);
+            document.getElementById('focus-ring').style.strokeDashoffset = FOCUS_RING * (1 - focusRemaining / focusTotal);
+            document.getElementById('focus-ring').setAttribute('stroke', focusPhase === 'work' ? '#f59e0b' : '#10b981');
+            document.getElementById('focus-cycle').innerText = focusPhase === 'work' ? `Foco · ciclo ${focusCycle} de 4` : (focusPhase === 'long' ? 'Pausa longa' : 'Pausa curta');
+            const t = tasks.find(x => x.id === focusTaskId);
+            document.getElementById('focus-phase-badge').innerText = focusRunning
+                ? (focusPhase === 'work' ? (t ? 'Focando: ' + t.title.slice(0, 22) : 'Focando') : 'Pausa — respire 🌿')
+                : (focusRemaining === focusTotal ? 'Pronto para focar' : 'Em pausa');
+            document.getElementById('timer-icon').className = 'ph-bold ' + (focusRunning ? 'ph-pause' : 'ph-play') + ' text-lg';
+            document.getElementById('focus-main-label').innerText = focusRunning ? 'Pausar' : (focusRemaining < focusTotal ? 'Continuar' : 'Iniciar');
+            document.title = focusRunning ? `${fmtClock(focusRemaining)} · ${focusPhase === 'work' ? 'Foco' : 'Pausa'}` : BASE_TITLE;
+            document.querySelectorAll('.focus-preset').forEach(b => {
+                const on = b.dataset.preset === `${focusCfg.work}-${focusCfg.short}`;
+                b.classList.toggle('bg-amber-500', on); b.classList.toggle('text-white', on);
+            });
         };
 
-        window.toggleTimer = function() {
-            if (isTimerRunning) {
-                clearInterval(timerInterval);
-                isTimerRunning = false;
-                document.getElementById('timer-icon').className = 'ph-bold ph-play';
+        function setPhase(p) {
+            clearInterval(focusTick); focusRunning = false;
+            focusPhase = p; focusTotal = focusRemaining = phaseSeconds(p);
+            renderFocus();
+        }
+
+        window.setFocusPreset = function(work, brk) {
+            focusCfg = { work, short: brk, long: Math.max(brk * 3, brk + 5) };
+            focusCycle = 1;
+            setPhase('work');
+        };
+        window.useCustomFocus = function() {
+            const n = parseInt(document.getElementById('focus-custom-min').value, 10);
+            if (!n || n < 5 || n > 120) return showToast('Digite um tempo entre 5 e 120 minutos.');
+            window.setFocusPreset(n, Math.max(3, Math.round(n / 5)));
+        };
+
+        function tickFocus() {
+            focusRemaining = Math.max(0, Math.round((focusEndAt - Date.now()) / 1000));
+            renderFocus();
+            if (focusRemaining === 0) finishPhase();
+        }
+
+        window.toggleFocus = function() {
+            if (focusRunning) {
+                clearInterval(focusTick); focusRunning = false;
+                focusRemaining = Math.max(0, Math.round((focusEndAt - Date.now()) / 1000));
             } else {
-                isTimerRunning = true;
-                document.getElementById('timer-icon').className = 'ph-bold ph-pause';
-                timerInterval = setInterval(() => {
-                    if (timerSeconds > 0) {
-                        timerSeconds--;
-                        updateTimerDisplay();
-                    } else {
-                        clearInterval(timerInterval);
-                        isTimerRunning = false;
-                        addXP(30);
-                        showToast("🔔 Sessão de Foco Concluída!");
-                        document.getElementById('timer-icon').className = 'ph-bold ph-play';
-                    }
-                }, 1000);
+                try { const C = window.AudioContext || window.webkitAudioContext; if (C && !focusAudio) focusAudio = new C(); if (focusAudio && focusAudio.state === 'suspended') focusAudio.resume(); } catch (e) {}
+                focusRunning = true;
+                focusEndAt = Date.now() + focusRemaining * 1000;
+                focusTick = setInterval(tickFocus, 250);
             }
+            renderFocus();
         };
 
-        window.resetTimer = function() {
-            clearInterval(timerInterval);
-            isTimerRunning = false;
-            document.getElementById('timer-icon').className = 'ph-bold ph-play';
-            timerSeconds = 25 * 60;
-            updateTimerDisplay();
+        function finishPhase() {
+            clearInterval(focusTick); focusRunning = false;
+            focusBeep();
+            if (focusPhase === 'work') {
+                focusTodayMin += focusCfg.work;
+                addXP(30);
+                const t = tasks.find(x => x.id === focusTaskId && !x.completed);
+                const btn = document.getElementById('focus-done-btn');
+                if (t) { document.getElementById('focus-done-label').innerText = 'Concluir: ' + t.title.slice(0, 28); btn.classList.remove('hidden'); btn.classList.add('flex'); }
+                showToast('🔔 Foco concluído! Hora da pausa.');
+                const next = focusCycle >= 4 ? 'long' : 'short';
+                setPhase(next);
+            } else {
+                showToast('⏰ Pausa terminou. Bora focar?');
+                focusCycle = focusPhase === 'long' ? 1 : focusCycle + 1;
+                setPhase('work');
+            }
+            renderTasks();
+        }
+
+        window.resetFocus = function() { setPhase(focusPhase); };
+        window.skipFocusPhase = function() {
+            if (focusPhase === 'work') setPhase(focusCycle >= 4 ? 'long' : 'short');
+            else { focusCycle = focusPhase === 'long' ? 1 : focusCycle + 1; setPhase('work'); }
         };
 
-        function updateTimerDisplay() {
-            const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
-            const secs = (timerSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+        window.focusOnTask = function(id) {
+            focusTaskId = id;
+            const sel = document.getElementById('focus-task-select');
+            if (sel) sel.value = id;
+            if (focusPhase !== 'work') setPhase('work');
+            document.getElementById('focus-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (!focusRunning) window.toggleFocus(); else renderFocus();
+        };
+        window.focusOnNext = function() { if (nextTaskId) window.focusOnTask(nextTaskId); };
+
+        window.completeFocusTask = async function() {
+            const t = tasks.find(x => x.id === focusTaskId);
+            if (t && !t.completed) await window.toggleTask(t.id, false);
+            const btn = document.getElementById('focus-done-btn');
+            btn.classList.add('hidden'); btn.classList.remove('flex');
+        };
+
+        function refreshFocusSelect(pending) {
+            const sel = document.getElementById('focus-task-select');
+            if (!sel) return;
+            const list = pending || tasks.filter(t => !t.completed);
+            if (focusTaskId && !list.some(t => t.id === focusTaskId)) focusTaskId = '';
+            sel.innerHTML = '';
+            const o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Sem bloco específico'; sel.appendChild(o0);
+            list.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = `${t.time || '--:--'} — ${t.title}`; sel.appendChild(o); });
+            sel.value = focusTaskId;
+            renderFocus();
         }
 
         window.updateEnergySliderLabel = function(val) {
@@ -1467,7 +1692,6 @@
 
         window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); };
         window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
-        window.openAddTaskModal = function() { openModal('modal-task'); };
         window.openAddHabitModal = function() { openModal('modal-habit'); };
         window.openLoginModal = function() { openModal('modal-login'); };
 
@@ -1590,6 +1814,146 @@
                 showToast("Não foi possível sair agora.");
             }
         };
+
+
+        // ---------- Mascote Prumo (nada aqui é salvo: só memória da sessão) ----------
+        const PM_QUESTIONS = [
+            "Me conte como foi seu dia hoje 😊",
+            "Como foi o seu dia até agora?",
+            "E aí, como você está se sentindo hoje?",
+            "Quero saber: o que de bom (ou de ruim) rolou no seu dia?",
+            "Como andou o seu dia? Pode me contar!",
+            "Passando para saber: como foi hoje para você?"
+        ];
+        const PM_GREETINGS = ["Oi! 😊", "Bora focar? 💪", "Respira fundo! 🌿", "Você está indo bem! ⭐", "Um passo de cada vez 🐾"];
+        const PM_SYSTEM = `Você é o Prumo, um mascote fofo e carinhoso de um aplicativo de gestão de tempo. Converse em português, com no máximo 2 frases curtas, sem markdown, com linguagem simples (o público inclui adolescentes). Reaja com empatia ao que a pessoa contou; se fizer sentido, sugira uma ação pequena e gentil. Nunca peça dados pessoais (nome completo, endereço, escola, telefone). Se a pessoa falar de autolesão, suicídio, abuso, violência ou sofrimento intenso, acolha, diga que ela não está sozinha, incentive falar agora com um adulto de confiança ou profissional e, no Brasil, ligar para o CVV no 188 (24h, gratuito) ou SAMU 192 em emergência. Não faça diagnósticos. Se o assunto fugir de bem-estar, rotina e foco, volte gentilmente ao tema.`;
+        let pmHistory = [];
+        let pmAsked = [];
+        let pmCount = 0;
+        let pmOpen = false;
+        let pmBusy = false;
+        let pmTimer = null;
+
+        function pmBlocked() {
+            if (pmOpen) return true;
+            if (document.hidden) return true;
+            const onb = document.getElementById('onboarding-screen');
+            if (onb && !onb.classList.contains('hidden')) return true;
+            return !!document.querySelector('[id^="modal-"]:not(.hidden)');
+        }
+
+        function pmSay(text, ms = 3200) {
+            const b = document.getElementById('prumo-bubble');
+            if (!b || pmOpen) return;
+            b.textContent = text;
+            b.classList.add('show');
+            setTimeout(() => b.classList.remove('show'), ms);
+        }
+
+        function pmMoveToCenter() {
+            const m = document.getElementById('prumo-mascot');
+            const scale = 2.4;
+            const dx = window.innerWidth / 2 - 8 - (48 * scale) / 2;
+            const dy = Math.max(70, window.innerHeight / 2 - 190);
+            m.classList.add('center');
+            m.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+        }
+        function pmMoveHome() {
+            const m = document.getElementById('prumo-mascot');
+            m.classList.remove('center');
+            m.style.transform = '';
+        }
+
+        async function pmPickQuestion() {
+            const hora = new Date().getHours();
+            const periodo = hora < 12 ? 'manhã' : hora < 18 ? 'tarde' : 'noite';
+            try {
+                const q = await callAI({
+                    system: 'Você escreve UMA pergunta curta (até 14 palavras), carinhosa e informal, em português, perguntando como foi o dia da pessoa. Use palavras diferentes das já usadas. Exemplo de estilo: "Me conte como foi seu dia hoje". Responda só com a pergunta, sem aspas e sem markdown.',
+                    messages: [{ role: 'user', content: `Agora é ${periodo}. Perguntas já usadas: ${pmAsked.join(' | ') || 'nenhuma'}. Escreva uma nova.` }]
+                });
+                const clean = cleanMarkdown(q).replace(/^["“]|["”]$/g, '').trim();
+                if (clean && clean.length <= 140) return clean;
+            } catch (e) { /* usa as frases prontas */ }
+            const options = PM_QUESTIONS.filter(x => !pmAsked.includes(x));
+            const pool = options.length ? options : PM_QUESTIONS;
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        window.openPrumoCheckin = async function() {
+            if (pmOpen) return;
+            pmOpen = true;
+            pmHistory = [];
+            document.getElementById('prumo-bubble').classList.remove('show');
+            document.getElementById('pc-reply').classList.add('hidden');
+            document.getElementById('pc-chips').classList.remove('hidden');
+            document.getElementById('pc-input').value = '';
+            const qEl = document.getElementById('pc-question');
+            qEl.textContent = '...';
+            pmMoveToCenter();
+            const box = document.getElementById('prumo-checkin');
+            box.classList.remove('hidden'); box.classList.add('flex');
+            const q = await pmPickQuestion();
+            pmAsked.push(q); pmCount++;
+            pmHistory.push({ role: 'assistant', content: q });
+            qEl.textContent = q;
+        };
+
+        window.closePrumoCheckin = function() {
+            pmOpen = false;
+            pmHistory = [];            // nada é guardado
+            const box = document.getElementById('prumo-checkin');
+            box.classList.add('hidden'); box.classList.remove('flex');
+            document.getElementById('pc-input').value = '';
+            pmMoveHome();
+            setTimeout(() => pmSay('Até já! 👋'), 1500);
+            pmSchedule();
+        };
+
+        window.prumoAnswer = async function(preset) {
+            if (pmBusy) return;
+            const input = document.getElementById('pc-input');
+            const text = (preset || input.value).trim();
+            if (!text) return;
+            input.value = '';
+            pmBusy = true;
+            document.getElementById('pc-chips').classList.add('hidden');
+            const replyEl = document.getElementById('pc-reply');
+            replyEl.classList.remove('hidden');
+            replyEl.textContent = 'Prumo está pensando...';
+            pmHistory.push({ role: 'user', content: text });
+            let reply;
+            try {
+                reply = cleanMarkdown(await callAI({ system: PM_SYSTEM, messages: pmHistory.slice(-8) }));
+            } catch (e) {
+                reply = location.protocol === 'file:'
+                    ? 'Obrigado por me contar! (Para eu responder de verdade, abra o site publicado.)'
+                    : 'Obrigado por me contar! Respire fundo e siga no seu ritmo. 🌿';
+            }
+            pmHistory.push({ role: 'assistant', content: reply });
+            replyEl.textContent = reply;
+            pmBusy = false;
+            input.focus();
+        };
+
+        window.prumoMascotClick = function() {
+            if (pmOpen) return;
+            if (pmBlocked()) return;
+            if (Math.random() < 0.5) pmSay(PM_GREETINGS[Math.floor(Math.random() * PM_GREETINGS.length)]);
+            else window.openPrumoCheckin();
+        };
+
+        function pmSchedule() {
+            clearTimeout(pmTimer);
+            if (pmCount >= 3) return;                       // no máximo 3 perguntas por visita
+            const wait = (pmCount === 0 ? 60 : 180) * 1000 + Math.random() * 60000;
+            pmTimer = setTimeout(() => {
+                if (pmBlocked()) return pmSchedule();
+                window.openPrumoCheckin();
+            }, wait);
+        }
+        setTimeout(() => pmSay('Oi, eu sou o Prumo! 😊', 4000), 2500);
+        pmSchedule();
 
         let breathingInterval = null;
         let isBreathingActive = false;
@@ -1865,6 +2229,8 @@
 
         initAuth();
         window.startOnboardingChat();
+        window.setFocusPreset(25, 5);
+        renderTasks();
     </script>
 </body>
 </html>
