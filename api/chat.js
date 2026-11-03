@@ -5,6 +5,7 @@ const MAX_MESSAGES = 12;
 const MAX_CONTENT = 2000;
 const MAX_SYSTEM = 3500;
 const LIMIT_PER_MIN = 20;
+const TIME_ZONE = 'America/Sao_Paulo'; // Horário de Brasília (configurável via PRUMO_TIME_ZONE)
 const hits = new Map(); // limite simples por IP (reinicia quando a função "esfria")
 
 function rateLimited(ip) {
@@ -43,8 +44,28 @@ module.exports = async (req, res) => {
     .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CONTENT) }));
   if (messages.length === 0) return res.status(400).json({ error: 'Requisição inválida' });
 
+  // Data e hora reais obtidas no servidor, nunca estimadas pela IA.
+  const now = new Date();
+  let zone = process.env.PRUMO_TIME_ZONE || TIME_ZONE;
+  try { new Intl.DateTimeFormat('pt-BR', { timeZone: zone }); }
+  catch { zone = TIME_ZONE; }
+  const date = new Intl.DateTimeFormat('pt-BR', { timeZone: zone, day: '2-digit', month: '2-digit', year: 'numeric' }).format(now);
+  const time = new Intl.DateTimeFormat('pt-BR', { timeZone: zone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now);
+  const weekday = new Intl.DateTimeFormat('pt-BR', { timeZone: zone, weekday: 'long' }).format(now);
+
+  // Para perguntas diretas, responde deterministicamente sem risco de alucinação.
+  const lastUser = [...messages].reverse().find(m => m.role === 'user');
+  const question = (lastUser?.content || '').trim().toLocaleLowerCase('pt-BR').replace(/[?!.,]+$/g, '').trim();
+  if (/^(que horas (são|sao|são agora|sao agora)|qual (é|e) (a )?hora( agora)?|me (diga|fala) (as )?horas( agora)?|horas agora)$/.test(question)) {
+    return res.status(200).json({ text: `Agora são ${time} (horário de Brasília, ${zone}).` });
+  }
+  if (/^(que dia (é|e) hoje|qual (é|e) a data( de hoje)?|qual (é|e) o dia de hoje|data de hoje|hoje (é|e) que dia)$/.test(question)) {
+    return res.status(200).json({ text: `Hoje é ${weekday}, ${date} (${zone}).` });
+  }
+
   const system = typeof body.system === 'string' ? body.system.slice(0, MAX_SYSTEM) : '';
-  const finalMessages = system ? [{ role: 'system', content: system }, ...messages] : messages;
+  const clockContext = `Data e hora atuais verificadas pelo servidor: ${weekday}, ${date}, ${time}. Fuso horário: ${zone}. Ao responder sobre data, hora ou dia da semana, use exclusivamente esses valores; não invente nem use datas do treinamento. Horário válido no instante desta requisição.`;
+  const finalMessages = [{ role: 'system', content: clockContext + '\n' + system }, ...messages];
 
   // Tenta o modelo da variável GROQ_MODEL primeiro e, se ele não existir mais, os seguintes.
   const candidates = [process.env.GROQ_MODEL, 'openai/gpt-oss-20b', 'llama-3.1-8b-instant', 'llama-3.3-70b-versatile']
